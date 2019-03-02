@@ -32,7 +32,7 @@ class Case(models.Model):
         return self.case_num
 
     def parties(self):
-        return f"{', '.join([p.name for p in self.party_set.all()])}"
+        return f"{'; '.join([p.name for p in self.party_set.all()])}"
 
     class Meta:
         db_table = 'denton_docket_case'
