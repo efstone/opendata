@@ -5,7 +5,7 @@ from evictions.models import *
 
 @admin.register(Case)
 class CaseAdmin(admin.ModelAdmin):
-    list_display = ['case_num', 'filing_date', 'court', 'judge', 'case_type', 'judgment_amount', 'awarded_to','landlord_tenant_case', 'is_apartment']
+    list_display = ['case_num', 'filing_date', 'court', 'judge', 'case_type', 'judgment_amount', 'awarded_to', 'parties']
 
 
 @admin.register(Party)

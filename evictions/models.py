@@ -31,6 +31,9 @@ class Case(models.Model):
     def __str__(self):
         return self.case_num
 
+    def parties(self):
+        return f"{', '.join([p.name for p in self.party_set.all()])}"
+
     class Meta:
         db_table = 'denton_docket_case'
         ordering = ['filing_date']
@@ -47,12 +50,16 @@ class Party(models.Model):
     class Meta:
         db_table = 'denton_docket_party'
         ordering = ['name']
+        verbose_name_plural = 'Parties'
 
 
 class Appearance(models.Model):
     case = models.ForeignKey(Case, on_delete=models.CASCADE)
     party = models.ForeignKey(Party, on_delete=models.CASCADE)
     party_type = models.CharField(max_length=80)
+
+    def __str__(self):
+        return f"{self.party_type}"
 
     class Meta:
         db_table = 'denton_docket_appearance'
