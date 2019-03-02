@@ -6,6 +6,12 @@ class Disposition(models.Model):
     name = models.CharField(max_length=100)
     judge_decided = models.NullBooleanField(default=None)
 
+    def __str__(self):
+        return f"{self.name}"
+
+    class Meta:
+        db_table = 'denton_docket_disposition'
+
 
 class Case(models.Model):
     case_num = models.CharField(max_length=17, unique=True)
@@ -24,6 +30,9 @@ class Case(models.Model):
     def __str__(self):
         return self.case_num
 
+    class Meta:
+        db_table = 'denton_docket_case'
+
 
 class Party(models.Model):
     cases = models.ManyToManyField(Case, through='Appearance')
@@ -33,11 +42,17 @@ class Party(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        db_table = 'denton_docket_party'
+
 
 class Appearance(models.Model):
     case = models.ForeignKey(Case, on_delete=models.CASCADE)
     party = models.ForeignKey(Party, on_delete=models.CASCADE)
     party_type = models.CharField(max_length=80)
+
+    class Meta:
+        db_table = 'denton_docket_appearance'
 
 
 class Attorney(models.Model):
@@ -47,3 +62,6 @@ class Attorney(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        db_table = 'denton_docket_attorney'
