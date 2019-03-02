@@ -11,6 +11,7 @@ class Disposition(models.Model):
 
     class Meta:
         db_table = 'denton_docket_disposition'
+        ordering = ['name']
 
 
 class Case(models.Model):
@@ -32,6 +33,7 @@ class Case(models.Model):
 
     class Meta:
         db_table = 'denton_docket_case'
+        ordering = ['filing_date']
 
 
 class Party(models.Model):
@@ -44,6 +46,7 @@ class Party(models.Model):
 
     class Meta:
         db_table = 'denton_docket_party'
+        ordering = ['name']
 
 
 class Appearance(models.Model):
