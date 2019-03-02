@@ -11,7 +11,7 @@ class Case(models.Model):
     case_num = models.CharField(max_length=17, unique=True)
     filing_date = models.DateTimeField(default=None, null=True)
     page_source = models.TextField()
-    disposition = models.ForeignKey(Disposition, db_constraint=False, null=True, default=None)
+    disposition = models.ForeignKey(Disposition, db_constraint=False, null=True, default=None, on_delete=models.DO_NOTHING)
     court = models.CharField(max_length=30)
     judge = models.CharField(max_length=50)
     case_type = models.CharField(max_length=120, default='')
