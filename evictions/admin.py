@@ -15,4 +15,4 @@ class PartyAdmin(admin.ModelAdmin):
 
 @admin.register(Disposition)
 class DispositionAdmin(admin.ModelAdmin):
-    list_display = ['name', 'is_landlord']
+    list_display = ['name']
