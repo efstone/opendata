@@ -8,7 +8,6 @@ from evictions.models import *
 from django.db.utils import IntegrityError
 from django.utils import timezone
 from django.db import connection
-from pynput.mouse import Button, Controller
 import json
 
 
