@@ -85,12 +85,12 @@ def process_current_log():
 def check_for_players():
     player_pat = re.compile('[^ ]+')
     result = login_and_send('list')
+    client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
     if result != 'There are 0 of a max 20 players online: ':
         process_current_log()
         unsent_logins = McLog.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
         for msg in unsent_logins:
             player_name = re.match(player_pat, msg.msg_content).group()
-            client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
             message = client.messages.create(
                 from_='+19402172983',
                 body=f'{player_name} logged in.',
@@ -98,4 +98,17 @@ def check_for_players():
             )
             msg.msg_twilled = timezone.now()
             msg.save()
+        unsent_chats = McLog.objects.filter(msg_content__startswith='<', msg_twilled=None)
+        chat_list = []
+        for chat in unsent_chats:
+            chat_list.append(chat.msg_content)
+            chat.msg_twilled = timezone.now()
+            chat.save()
+        if len(chat_list) > 0:
+            chats = '\n'.join(chat_list)
+            message = client.messages.create(
+                from_='+19402172983',
+                body=f'{chats}',
+                to='+19405947406'
+            )
     print(result)
