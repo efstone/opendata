@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from knapiks.mcchat import *
 from twilio.twiml.messaging_response import MessagingResponse
-
+from django.http import HttpResponse
 
 # Create your views here.
 
@@ -16,6 +16,6 @@ def receive_message(request):
         else:
             resp = MessagingResponse()
             resp.message("This number cannot receive messages at this time.")
-            return f"{resp}"
+            return HttpResponse(f"{resp}")
     except Exception as e:
         return render(request, "base.html", {'error': e})
