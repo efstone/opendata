@@ -10,6 +10,10 @@ class MCConfig(models.Model):
     def __str__(self):
         return f"{self.mc_key}"
 
+    class Meta:
+        verbose_name = 'Config'
+        verbose_name_plural = 'Configs'
+
 
 class McLog(models.Model):
     msg_time = models.DateTimeField(null=True, default=None)
