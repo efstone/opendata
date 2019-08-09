@@ -7,3 +7,4 @@ def receive_message(request):
     with open('/home/opendata/message_request.txt', 'w') as f:
         body = request.values.get('Body', None)
         f.write(body)
+    return render(request, "base.html", {'request': request})
