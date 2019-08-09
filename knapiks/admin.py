@@ -4,6 +4,25 @@ from knapiks.models import *
 # Register your models here.
 
 
+class LogFilter(admin.SimpleListFilter):
+    title = 'Message Types'
+    parameter_name = 'entry_type'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('chats', 'In-game chats'),
+            ('logins', 'User log-ins'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'chats':
+            return queryset.filter(msg_content__startswith='<')
+        elif self.value() == 'logins':
+            return queryset.filter(msg_content__contains='joined the game')
+        else:
+            return queryset.filter()
+
+
 @admin.register(MCConfig)
 class ConfigAdmin(admin.ModelAdmin):
     list_display = ['mc_key', 'mc_value']
@@ -13,3 +32,4 @@ class ConfigAdmin(admin.ModelAdmin):
 class LogAdmin(admin.ModelAdmin):
     list_display = ['msg_time', 'msg_type', 'msg_content', 'msg_twilled']
     search_fields = ['msg_content']
+    list_filter = [LogFilter]
