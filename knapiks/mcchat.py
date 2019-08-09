@@ -10,7 +10,7 @@ from datetime import datetime
 import re
 from django.db.utils import IntegrityError
 from docketdata.celery import app
-
+from twilio.rest import Client
 
 class MyFTP_TLS(ftplib.FTP_TLS):
     """Explicit FTPS, with shared TLS session"""
@@ -83,5 +83,19 @@ def process_current_log():
 
 @app.task
 def check_for_players():
+    player_pat = re.compile('[^ ]+')
     result = login_and_send('list')
+    if result != 'There are 0 of a max 20 players online: ':
+        process_current_log()
+        unsent_logins = McLog.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
+        for msg in unsent_logins:
+            player_name = re.match(player_pat, msg.msg_content).group()
+            client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
+            message = client.messages.create(
+                from_='+19402172983',
+                body=f'{player_name} logged in.',
+                to='+19405947406'
+            )
+            msg.msg_twilled = timezone.now()
+            msg.save()
     print(result)
