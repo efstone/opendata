@@ -30,6 +30,6 @@ class ConfigAdmin(admin.ModelAdmin):
 
 @admin.register(McLog)
 class LogAdmin(admin.ModelAdmin):
-    list_display = ['msg_time', 'msg_type', 'msg_content', 'msg_twilled']
+    list_display = ['msg_time', 'msg_content', 'msg_twilled']
     search_fields = ['msg_content']
     list_filter = [LogFilter]

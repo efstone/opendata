@@ -63,6 +63,7 @@ def login_and_send(command):
 
 def process_current_log():
     log = get_latest_log()
+    rcon_pat = re.compile('Rcon connection from')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
     for line in log:
         log_re = re.match(mc_log_pat, line)
@@ -71,10 +72,13 @@ def process_current_log():
         msg_content = log_re.group(3)
         utc_tz = pytz.timezone('UTC')
         msg_time = datetime.combine(timezone.now().date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
-        new_msg = McLog()
-        new_msg.msg_time = utc_tz.localize(msg_time)
-        new_msg.msg_content = msg_content
-        new_msg.msg_type = msg_type
+        if re.match(rcon_pat, msg_content) is None:
+            new_msg = McLog()
+            new_msg.msg_time = utc_tz.localize(msg_time)
+            new_msg.msg_content = msg_content
+            new_msg.msg_type = msg_type
+        else:
+            continue
         try:
             new_msg.save()
         except IntegrityError:
