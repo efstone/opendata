@@ -4,6 +4,6 @@ from django.shortcuts import render
 
 
 def receive_message(request):
-    with open('/home/opendata/message_request.txt', 'wb') as f:
-        f.write(request)
-    return render(request, "base.html", {'request': request})
+    with open('/home/opendata/message_request.txt', 'w') as f:
+        f.write(request.POST)
+    return render(request, "base.html", {'request': request.POST})
