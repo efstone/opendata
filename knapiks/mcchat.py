@@ -9,6 +9,7 @@ from django.utils import timezone
 from datetime import datetime
 import re
 from django.db.utils import IntegrityError
+from docketdata.celery import app
 
 
 class MyFTP_TLS(ftplib.FTP_TLS):
@@ -78,3 +79,9 @@ def process_current_log():
             new_msg.save()
         except IntegrityError:
             continue
+
+
+@app.task
+def check_for_players():
+    result = login_and_send('list')
+    print(result)
