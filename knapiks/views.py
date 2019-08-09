@@ -5,5 +5,5 @@ from django.shortcuts import render
 
 def receive_message(request):
     with open('/home/opendata/message_request.txt', 'wb') as f:
-        f.write(str(request.body))
+        f.write(request.body)
     return render(request, "base.html", {'request': request.body})
