@@ -6,6 +6,9 @@ from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
 def receive_message(request):
-    with open('/home/opendata/message_request.txt', 'wb') as f:
-        f.write(request.body)
+    message = {}
+    message['From'] = request.POST['From']
+    message['Body'] = request.POST['Body']
+    with open('/home/opendata/message_request.txt', 'w') as f:
+        f.write(f"{message})
     return render(request, "base.html", {'request': request.body})
