@@ -9,9 +9,14 @@ from django.http import HttpResponse
 
 @csrf_exempt
 def receive_message(request):
+    cmds_pat = re.compile(
+        '(advancement|ban|ban-ip|banlist|bossbar|clear|clone|data|datapack|debug|defaultgamemode|deop|difficulty|effect|enchant|execute|experience|fill|forceload|function|gamemode|gamerule|give|help|kick|kill|list|locate|loot|me|msg|op|pardon|particle|playsound|publish|recipe|reload|replaceitem|save-all|save-off|save-on|schedule|scoreboard|seed|setblock|setidletimeout|setworldspawn|spawnpoint|spreadplayers|stop|stopsound|summon|tag|team|teleport|teammsg|tell|tellraw|time|title|tp|trigger|weather|whitelist|worldborder|xp)')
     try:
         if request.POST['From'] == '+19405947406':
-            cmd_response = login_and_send(request.POST['Body'])
+            if re.match(cmds_pat, request.POST['Body']) is None:
+                cmd_response = login_and_send(f"say {request.POST['Body']}")
+            else:
+                cmd_response = login_and_send(request.POST['Body'])
             resp = MessagingResponse()
             resp.message(f"{cmd_response}")
             return HttpResponse(f"{resp}")
