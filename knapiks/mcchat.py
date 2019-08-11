@@ -103,7 +103,7 @@ def check_for_players():
             msg.msg_twilled = timezone.now()
             msg.save()
         unsent_chats = McLog.objects.filter(msg_content__startswith='<', msg_twilled=None)
-        logouts = McLog.objects.filter(msg_content__contains='has left the game', msg_twilled=None)
+        logouts = McLog.objects.filter(msg_content__contains='left the game', msg_twilled=None)
         chat_list = []
         msgs_to_send = unsent_chats | logouts
         for chat in msgs_to_send:
