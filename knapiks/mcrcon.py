@@ -1,3 +1,9 @@
+"""
+Special thanks to Barney Gale for making this awesome Python implementation of rcon.
+I modified the login function slightly, but everything else is as-is. You can find
+Barney's original source here: https://github.com/barneygale/MCRcon
+"""
+
 import collections
 import struct
 import socket

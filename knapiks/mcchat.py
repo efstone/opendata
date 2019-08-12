@@ -12,15 +12,20 @@ from django.db.utils import IntegrityError
 from docketdata.celery import app
 from twilio.rest import Client
 
+
 class MyFTP_TLS(ftplib.FTP_TLS):
     """Explicit FTPS, with shared TLS session"""
+
+    # special thanks to https://stackoverflow.com/users/448474/hynekcer for this class
+    # this was the easy fix for the "session reuse required" error that was happening
+    # with Python's native FTP_TLS class
 
     def ntransfercmd(self, cmd, rest=None):
         conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
         if self._prot_p:
             conn = self.context.wrap_socket(conn,
                                             server_hostname=self.host,
-                                            session=self.sock.session)  # this is the fix
+                                            session=self.sock.session)
         return conn, size
 
 
@@ -87,6 +92,8 @@ def process_current_log():
 
 @app.task
 def check_for_players():
+    to_number = MCConfig.objects.get(mc_key='to_num').mc_value
+    from_number = MCConfig.objects.get(mc_key='from_num').mc_value
     player_pat = re.compile('[^ ]+')
     result = login_and_send('list')
     client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
@@ -96,9 +103,9 @@ def check_for_players():
         for msg in unsent_logins:
             player_name = re.match(player_pat, msg.msg_content).group()
             message = client.messages.create(
-                from_='+19402172983',
+                from_=f'+{from_number}',
                 body=f'{player_name} logged in.',
-                to='+19405947406'
+                to=f'+{to_number}'
             )
             msg.msg_twilled = timezone.now()
             msg.save()
@@ -113,8 +120,8 @@ def check_for_players():
         if len(chat_list) > 0:
             chats = '\n'.join(chat_list)
             message = client.messages.create(
-                from_='+19402172983',
+                from_=f'+{from_number}',
                 body=f'{chats}',
-                to='+19405947406'
+                to=f'+{to_number}'
             )
     print(result)
