@@ -35,3 +35,9 @@ class Player(models.Model):
     name = models.CharField(max_length=100, default='', unique=True)
     last_login = models.DateTimeField(null=True, default=None)
     last_logout = models.DateTimeField(null=True, default=None)
+
+    def __str__(self):
+        return f"{self.name}"
+
+    class Meta:
+        ordering = ['-last_login']
