@@ -43,9 +43,9 @@ def mc_decrypt(ciphertext, cipher_key):
 
 def get_latest_log():
     mc_key = settings.MC_KEY
-    ftp_host = MCConfig.objects.get(mc_key='ftp_host').mc_value
-    ftp_login = MCConfig.objects.get(mc_key='ftp_login').mc_value
-    ftp_pw_crypt = MCConfig.objects.get(mc_key='ftp_password').mc_value
+    ftp_host = Config.objects.get(mc_key='ftp_host').mc_value
+    ftp_login = Config.objects.get(mc_key='ftp_login').mc_value
+    ftp_pw_crypt = Config.objects.get(mc_key='ftp_password').mc_value
     mc_ftp = MyFTP_TLS(ftp_host)
     mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, mc_key))
     mc_ftp.prot_p()
@@ -56,9 +56,9 @@ def get_latest_log():
 
 def login_and_send(command):
     mc_key = settings.MC_KEY
-    rcon_host = MCConfig.objects.get(mc_key='rcon_host').mc_value
-    rcon_port = MCConfig.objects.get(mc_key='rcon_port').mc_value
-    rcon_pw_crypt = MCConfig.objects.get(mc_key='rcon_password').mc_value
+    rcon_host = Config.objects.get(mc_key='rcon_host').mc_value
+    rcon_port = Config.objects.get(mc_key='rcon_port').mc_value
+    rcon_pw_crypt = Config.objects.get(mc_key='rcon_password').mc_value
     try:
         mc = mcrcon.login(rcon_host, int(rcon_port), mc_decrypt(rcon_pw_crypt, mc_key))
         cmd = mcrcon.command(mc, command)
@@ -80,7 +80,7 @@ def process_current_log():
         utc_tz = pytz.timezone('UTC')
         msg_time = datetime.combine(timezone.now().date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
         if re.match(rcon_pat, msg_content) is None:
-            new_msg = McLog()
+            new_msg = Log()
             new_msg.msg_time = utc_tz.localize(msg_time)
             new_msg.msg_content = msg_content
             new_msg.msg_type = msg_type
@@ -94,14 +94,14 @@ def process_current_log():
 
 @app.task
 def check_for_players():
-    to_number = MCConfig.objects.get(mc_key='to_num').mc_value
-    from_number = MCConfig.objects.get(mc_key='from_num').mc_value
+    to_number = Config.objects.get(mc_key='to_num').mc_value
+    from_number = Config.objects.get(mc_key='from_num').mc_value
     player_pat = re.compile('[^ ]+')
     result = login_and_send('list')
     client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
     if result != 'There are 0 of a max 20 players online: ':
         process_current_log()
-        unsent_logins = McLog.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
+        unsent_logins = Log.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
         for msg in unsent_logins:
             player_name = re.match(player_pat, msg.msg_content).group()
             message = client.messages.create(
@@ -111,8 +111,8 @@ def check_for_players():
             )
             msg.msg_twilled = timezone.now()
             msg.save()
-        unsent_chats = McLog.objects.filter(msg_content__startswith='<', msg_twilled=None)
-        logouts = McLog.objects.filter(msg_content__contains='left the game', msg_twilled=None)
+        unsent_chats = Log.objects.filter(msg_content__startswith='<', msg_twilled=None)
+        logouts = Log.objects.filter(msg_content__contains='left the game', msg_twilled=None)
         chat_list = []
         msgs_to_send = unsent_chats | logouts
         for chat in msgs_to_send:
@@ -163,7 +163,7 @@ def process_mc_log_files(log_dir):
             utc_tz = pytz.timezone('UTC')
             msg_time = datetime.combine(datetime.strptime(log_date_str, "%Y-%m-%d").date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
             if re.match(rcon_pat, msg_content) is None:
-                new_msg = McLog()
+                new_msg = Log()
                 new_msg.msg_time = utc_tz.localize(msg_time)
                 new_msg.msg_content = msg_content
                 new_msg.msg_type = msg_type

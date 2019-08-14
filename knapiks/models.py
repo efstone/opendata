@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 
 
-class MCConfig(models.Model):
+class Config(models.Model):
     mc_key = models.CharField(max_length=150, default='', unique=True)
     mc_value = models.CharField(max_length=350, default='')
 
@@ -15,7 +15,7 @@ class MCConfig(models.Model):
         verbose_name_plural = 'Configs'
 
 
-class McLog(models.Model):
+class Log(models.Model):
     msg_time = models.DateTimeField(null=True, default=None)
     msg_content = models.CharField(max_length=2000, default='')
     msg_type = models.CharField(max_length=150, default='')
@@ -34,4 +34,4 @@ class McLog(models.Model):
 class Player(models.Model):
     name = models.CharField(max_length=100, default='', unique=True)
     last_login = models.DateTimeField(null=True, default=None)
-    last_logout = models.DateTimeField()
+    last_logout = models.DateTimeField(null=True, default=None)

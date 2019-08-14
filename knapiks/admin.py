@@ -23,12 +23,12 @@ class LogFilter(admin.SimpleListFilter):
             return queryset.filter()
 
 
-@admin.register(MCConfig)
+@admin.register(Config)
 class ConfigAdmin(admin.ModelAdmin):
     list_display = ['mc_key', 'mc_value']
 
 
-@admin.register(McLog)
+@admin.register(Log)
 class LogAdmin(admin.ModelAdmin):
     list_display = ['msg_time', 'msg_content', 'msg_twilled']
     search_fields = ['msg_content']
