@@ -11,6 +11,8 @@ import re
 from django.db.utils import IntegrityError
 from docketdata.celery import app
 from twilio.rest import Client
+import glob
+import os
 
 
 class MyFTP_TLS(ftplib.FTP_TLS):
@@ -125,3 +127,46 @@ def check_for_players():
                 to=f'+{to_number}'
             )
     print(result)
+
+
+def process_mc_log_files(log_dir):
+    log_files = glob.glob(f'{log_dir}/*.log')
+    date_pat = re.compile('\d{4}-\d{2}-\d{2}')
+    rcon_pat = re.compile('Rcon connection from')
+    mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
+    for log in log_files:
+        log_date_str_search = re.match(date_pat, os.path.basename(log))
+        if log_date_str_search is None:
+            continue
+        else:
+            log_date_str = log_date_str_search.group()
+        for line in log:
+            log_re = re.match(mc_log_pat, line)
+            try:
+                msg_time_text = log_re.group(1)
+            except:
+                print(line)
+                continue
+            try:
+                msg_type = log_re.group(2)
+            except:
+                print(line)
+                continue
+            try:
+                msg_content = log_re.group(3)
+            except:
+                print(line)
+                continue
+            utc_tz = pytz.timezone('UTC')
+            msg_time = datetime.combine(datetime.strptime(log_date_str, "%Y-%m-%d").date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
+            if re.match(rcon_pat, msg_content) is None:
+                new_msg = McLog()
+                new_msg.msg_time = utc_tz.localize(msg_time)
+                new_msg.msg_content = msg_content
+                new_msg.msg_type = msg_type
+            else:
+                continue
+            try:
+                new_msg.save()
+            except IntegrityError:
+                continue
