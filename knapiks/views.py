@@ -9,7 +9,7 @@ from django.http import HttpResponse
 
 @csrf_exempt
 def receive_message(request):
-    admin_num = Config.objects.get(mc_key='to_num').mc_value
+    admin_num = Config.objects.get(mc_key='admin_num').mc_value
     cmds_pat = re.compile(
         '(advancement|ban|ban-ip|banlist|bossbar|clear|clone|data|datapack|debug|defaultgamemode|deop|difficulty|effect|enchant|execute|experience|fill|forceload|function|gamemode|gamerule|give|help|kick|kill|list|locate|loot|me|msg|op|pardon|particle|playsound|publish|recipe|reload|replaceitem|save-all|save-off|save-on|schedule|scoreboard|seed|setblock|setidletimeout|setworldspawn|spawnpoint|spreadplayers|stop|stopsound|summon|tag|team|teleport|teammsg|tell|tellraw|time|title|tp|trigger|weather|whitelist|worldborder|xp)')
     try:

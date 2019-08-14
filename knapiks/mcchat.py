@@ -98,8 +98,8 @@ def process_current_log():
 
 @app.task
 def check_for_players():
-    to_number = Config.objects.get(mc_key='to_num').mc_value
-    from_number = Config.objects.get(mc_key='from_num').mc_value
+    admin_num = Config.objects.get(mc_key='admin_num').mc_value
+    twilio_num = Config.objects.get(mc_key='twilio_num').mc_value
     player_pat = re.compile('[^ ]+')
     result = login_and_send('list')
     client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
@@ -109,9 +109,9 @@ def check_for_players():
         for msg in unsent_logins:
             player_name = re.match(player_pat, msg.msg_content).group()
             message = client.messages.create(
-                from_=f'+{from_number}',
+                from_=f'+{twilio_num}',
                 body=f'{player_name} logged in.',
-                to=f'+{to_number}'
+                to=f'+{admin_num}'
             )
             msg.msg_twilled = timezone.now()
             msg.save()
@@ -126,9 +126,9 @@ def check_for_players():
         if len(chat_list) > 0:
             chats = '\n'.join(chat_list)
             message = client.messages.create(
-                from_=f'+{from_number}',
+                from_=f'+{twilio_num}',
                 body=f'{chats}',
-                to=f'+{to_number}'
+                to=f'+{admin_num}'
             )
     print(result)
 
