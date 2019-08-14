@@ -74,9 +74,13 @@ def process_current_log():
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
     for line in log:
         log_re = re.match(mc_log_pat, line)
-        msg_time_text = log_re.group(1)
-        msg_type = log_re.group(2)
-        msg_content = log_re.group(3)
+        try:
+            msg_time_text = log_re.group(1)
+            msg_type = log_re.group(2)
+            msg_content = log_re.group(3)
+        except Exception as e:
+            print(f"{e} on line: {line}")
+            continue
         utc_tz = pytz.timezone('UTC')
         msg_time = datetime.combine(timezone.now().date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
         if re.match(rcon_pat, msg_content) is None:
@@ -147,18 +151,10 @@ def process_mc_log_files(log_dir):
             log_re = re.match(mc_log_pat, line)
             try:
                 msg_time_text = log_re.group(1)
-            except:
-                print(line)
-                continue
-            try:
                 msg_type = log_re.group(2)
-            except:
-                print(line)
-                continue
-            try:
                 msg_content = log_re.group(3)
-            except:
-                print(line)
+            except Exception as e:
+                print(f"{e} on line: {line}")
                 continue
             utc_tz = pytz.timezone('UTC')
             msg_time = datetime.combine(datetime.strptime(log_date_str, "%Y-%m-%d").date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
