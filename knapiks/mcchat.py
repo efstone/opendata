@@ -134,12 +134,15 @@ def process_mc_log_files(log_dir):
     date_pat = re.compile('\d{4}-\d{2}-\d{2}')
     rcon_pat = re.compile('Rcon connection from')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
-    for log in log_files:
-        log_date_str_search = re.match(date_pat, os.path.basename(log))
+    for log_file in log_files:
+        log_date_str_search = re.match(date_pat, os.path.basename(log_file))
         if log_date_str_search is None:
             continue
         else:
             log_date_str = log_date_str_search.group()
+            with open(log_file, 'r') as f:
+                log_content = f.read()
+                log = log_content.split('\n')
         for line in log:
             log_re = re.match(mc_log_pat, line)
             try:
