@@ -33,3 +33,8 @@ class LogAdmin(admin.ModelAdmin):
     list_display = ['msg_time', 'msg_content', 'msg_twilled']
     search_fields = ['msg_content']
     list_filter = [LogFilter]
+
+
+@admin.register(Player)
+class PlayerAdmin(admin.ModelAdmin):
+    list_display = ['name', 'last_login', 'last_logout']
