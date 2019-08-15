@@ -105,9 +105,10 @@ def check_for_players():
         if player.last_login > player.last_logout:
             logged_in_players.append(player)
     if result != 'There are 0 of a max 20 players online: ' or len(logged_in_players) > 0:
+        print("player logged in test = positive; processing current log")
         process_current_log()
     else:
-        quit()
+        return
     admin_num = Config.objects.get(mc_key='admin_num').mc_value
     twilio_num = Config.objects.get(mc_key='twilio_num').mc_value
     player_pat = re.compile('[^ ]+')
@@ -141,20 +142,20 @@ def check_for_players():
             )
             msg.msg_twilled = timezone.now()
             msg.save()
-        unsent_chats = Log.objects.filter(msg_content__startswith='<', msg_twilled=None)
-        chat_list = []
-        msgs_to_send = unsent_chats
-        for chat in msgs_to_send:
-            chat_list.append(chat.msg_content)
-            chat.msg_twilled = timezone.now()
-            chat.save()
-        if len(chat_list) > 0:
-            chats = '\n'.join(chat_list)
-            message = client.messages.create(
-                from_=f'+{twilio_num}',
-                body=f'{chats}',
-                to=f'+{admin_num}'
-            )
+    unsent_chats = Log.objects.filter(msg_content__startswith='<', msg_twilled=None)
+    chat_list = []
+    msgs_to_send = unsent_chats
+    for chat in msgs_to_send:
+        chat_list.append(chat.msg_content)
+        chat.msg_twilled = timezone.now()
+        chat.save()
+    if len(chat_list) > 0:
+        chats = '\n'.join(chat_list)
+        message = client.messages.create(
+            from_=f'+{twilio_num}',
+            body=f'{chats}',
+            to=f'+{admin_num}'
+        )
     print(result)
 
 
