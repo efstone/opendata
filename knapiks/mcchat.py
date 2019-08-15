@@ -98,11 +98,7 @@ def process_current_log():
 
 @app.task
 def check_for_players():
-    admin_num = Config.objects.get(mc_key='admin_num').mc_value
-    twilio_num = Config.objects.get(mc_key='twilio_num').mc_value
-    player_pat = re.compile('[^ ]+')
     result = login_and_send('list')
-    client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
     logged_in_players = []
     players = Player.objects.all()
     for player in players:
@@ -110,6 +106,25 @@ def check_for_players():
             logged_in_players.append(player)
     if result != 'There are 0 of a max 20 players online: ' or len(logged_in_players) > 0:
         process_current_log()
+    else:
+        quit()
+    admin_num = Config.objects.get(mc_key='admin_num').mc_value
+    twilio_num = Config.objects.get(mc_key='twilio_num').mc_value
+    player_pat = re.compile('[^ ]+')
+    client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
+    if len(logged_in_players) > 0:
+        for player in logged_in_players:
+            last_logout = Log.objects.filter(msg_content=f'{player.name} left the game').last()
+            player.last_logout = last_logout.msg_time
+            player.save()
+            last_logout.msg_twilled = timezone.now()
+            last_logout.save()
+            message = client.messages.create(
+                from_=f'+{twilio_num}',
+                body=f'{player} logged out',
+                to=f'+{admin_num}'
+            )
+    if result != 'There are 0 of a max 20 players online: ':
         unsent_logins = Log.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
         for msg in unsent_logins:
             player_name = re.match(player_pat, msg.msg_content).group()
@@ -126,22 +141,9 @@ def check_for_players():
             )
             msg.msg_twilled = timezone.now()
             msg.save()
-        if len(logged_in_players) > 0:
-            for player in logged_in_players:
-                last_logout = Log.objects.filter(msg_content=f'{player.name} left the game').last()
-                player.last_logout = last_logout.msg_time
-                player.save()
-                last_logout.msg_twilled = timezone.now()
-                last_logout.save()
-                message = client.messages.create(
-                    from_=f'+{twilio_num}',
-                    body=f'{player} logged out',
-                    to=f'+{admin_num}'
-                )
         unsent_chats = Log.objects.filter(msg_content__startswith='<', msg_twilled=None)
-        logouts = Log.objects.filter(msg_content__contains='left the game', msg_twilled=None)
         chat_list = []
-        msgs_to_send = unsent_chats | logouts
+        msgs_to_send = unsent_chats
         for chat in msgs_to_send:
             chat_list.append(chat.msg_content)
             chat.msg_twilled = timezone.now()
