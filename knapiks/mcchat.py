@@ -68,6 +68,7 @@ def login_and_send(command):
         return e
 
 
+@app.task
 def process_current_log():
     log = get_latest_log()
     rcon_pat = re.compile('Rcon connection from')
