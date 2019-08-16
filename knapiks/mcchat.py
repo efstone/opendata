@@ -101,19 +101,16 @@ def check_for_players():
     result = login_and_send('list')
     logged_in_players = []
     players = Player.objects.all()
-    for player in players:
-        if player.last_login > player.last_logout:
-            logged_in_players.append(player)
-    if result != 'There are 0 of a max 20 players online: ' or len(logged_in_players) > 0:
-        print("player logged in test = positive; processing current log")
-        process_current_log()
-    else:
-        return
     admin_num = Config.objects.get(mc_key='admin_num').mc_value
     twilio_num = Config.objects.get(mc_key='twilio_num').mc_value
     player_pat = re.compile('[^ ]+')
     client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
-    if len(logged_in_players) > 0:
+    for player in players:
+        if player.last_login > player.last_logout:
+            logged_in_players.append(player)
+    if result == 'There are 0 of a max 20 players online: ' and len(logged_in_players) > 0:
+        # print("player logged in test = positive; processing current log")
+        process_current_log()
         for player in logged_in_players:
             last_logout = Log.objects.filter(msg_content=f'{player.name} left the game').last()
             player.last_logout = last_logout.msg_time
