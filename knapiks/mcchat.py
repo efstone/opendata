@@ -124,6 +124,7 @@ def check_for_players():
                 to=f'+{admin_num}'
             )
     if result != 'There are 0 of a max 20 players online: ':
+        process_current_log()
         unsent_logins = Log.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
         for msg in unsent_logins:
             player_name = re.match(player_pat, msg.msg_content).group()
