@@ -110,7 +110,6 @@ def check_for_players():
         if player.last_login > player.last_logout:
             logged_in_players.append(player)
     if result == 'There are 0 of a max 20 players online: ' and len(logged_in_players) > 0:
-        # print("player logged in test = positive; processing current log")
         process_current_log()
         for player in logged_in_players:
             last_logout = Log.objects.filter(msg_content=f'{player.name} left the game').last()
@@ -142,8 +141,10 @@ def check_for_players():
             msg.msg_twilled = timezone.now()
             msg.save()
     unsent_chats = Log.objects.filter(msg_content__startswith='<', msg_twilled=None)
+    logouts = Log.objects.filter(msg_content__startswith='left the game', msg_twilled=None)
+    unsent_msgs = unsent_chats | logouts
     chat_list = []
-    msgs_to_send = unsent_chats
+    msgs_to_send = unsent_msgs
     for chat in msgs_to_send:
         chat_list.append(chat.msg_content)
         chat.msg_twilled = timezone.now()
