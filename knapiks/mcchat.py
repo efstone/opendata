@@ -75,7 +75,7 @@ def login_and_send(command):
 @app.task
 def process_current_log():
     log = get_latest_log()
-    rcon_pat = re.compile('Rcon connection from')
+    msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
     for line in log:
         log_re = re.match(mc_log_pat, line)
@@ -88,7 +88,7 @@ def process_current_log():
             continue
         utc_tz = pytz.timezone('UTC')
         msg_time = datetime.combine(timezone.now().date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
-        if re.match(rcon_pat, msg_content) is None:
+        if re.match(msgs_to_omit_pat, msg_content) is None:
             new_msg = Log()
             new_msg.msg_time = utc_tz.localize(msg_time)
             new_msg.msg_content = msg_content
@@ -176,7 +176,7 @@ def check_for_players():
 def process_mc_log_files(log_dir):
     log_files = glob.glob(f'{log_dir}/*.log')
     date_pat = re.compile('\d{4}-\d{2}-\d{2}')
-    rcon_pat = re.compile('Rcon connection from')
+    msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
     for log_file in log_files:
         log_date_str_search = re.match(date_pat, os.path.basename(log_file))
@@ -198,7 +198,7 @@ def process_mc_log_files(log_dir):
                 continue
             utc_tz = pytz.timezone('UTC')
             msg_time = datetime.combine(datetime.strptime(log_date_str, "%Y-%m-%d").date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
-            if re.match(rcon_pat, msg_content) is None:
+            if re.match(msgs_to_omit_pat, msg_content) is None:
                 new_msg = Log()
                 new_msg.msg_time = utc_tz.localize(msg_time)
                 new_msg.msg_content = msg_content
