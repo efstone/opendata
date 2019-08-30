@@ -6,7 +6,7 @@ from knapiks.models import *
 import knapiks.mcrcon as mcrcon
 import pytz
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from django.db.utils import IntegrityError
 from docketdata.celery import app
@@ -111,9 +111,12 @@ def check_for_players():
     player_pat = re.compile('[^ ]+')
 
     # collect list of players in local db who appear to be logged in based on login/logout timestamps
-    for player in all_players:
+    for player in all_players.exclude(last_logout=None):
         if player.last_login > player.last_logout:
             players_without_logout_timestamps.append(player)
+
+    for player in all_players.filter(last_logout=None):
+        players_without_logout_timestamps.append(player)
 
     # if no one is actually logged in, but the local db indicates someone may be logged in, process the current log
     # and mark them as logged out and send the sysop a message that they're logged out
