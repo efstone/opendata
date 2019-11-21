@@ -54,7 +54,7 @@ def get_latest_log():
     mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, mc_key))
     mc_ftp.prot_p()
     mc_log = []
-    mc_ftp.retrlines('RETR /minecraft/logs/latest.log', mc_log.append)
+    mc_ftp.retrlines('RETR /custom-minecraft/logs/latest.log', mc_log.append)
     return mc_log
 
 
@@ -68,7 +68,10 @@ def login_and_send(command):
         cmd = mcrcon.command(mc, command)
         return cmd
     except Exception as e:
-        mc.close()
+        try:
+            mc.close()
+        except:
+            pass
         return e
 
 
