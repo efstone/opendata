@@ -158,7 +158,7 @@ def check_for_players():
 
         # then grab chats and logouts
         unsent_chats = Log.objects.filter(msg_content__startswith='<', msg_twilled=None)
-        logouts = Log.objects.filter(msg_content__startswith='left the game', msg_twilled=None)
+        logouts = Log.objects.filter(msg_content__endswith='left the game', msg_twilled=None)
         unsent_chats_and_logouts = unsent_chats | logouts
         msgs_to_send = unsent_chats_and_logouts
 
