@@ -15,8 +15,18 @@ import glob
 import os
 
 twilio_client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
-admin_phone = Config.objects.get(mc_key='admin_phone').mc_value
-twilio_phone = Config.objects.get(mc_key='twilio_phone').mc_value
+
+mc_key = settings.MC_KEY
+admin_phone   = Config.objects.get(mc_key='admin_phone').mc_value
+twilio_phone  = Config.objects.get(mc_key='twilio_phone').mc_value
+ftp_host      = Config.objects.get(mc_key='ftp_host').mc_value
+ftp_login     = Config.objects.get(mc_key='ftp_login').mc_value
+ftp_pw_crypt  = Config.objects.get(mc_key='ftp_password').mc_value
+rcon_host     = Config.objects.get(mc_key='rcon_host').mc_value
+rcon_port     = Config.objects.get(mc_key='rcon_port').mc_value
+rcon_pw_crypt = Config.objects.get(mc_key='rcon_password').mc_value
+
+pending_messages = []
 
 
 class MyFTP_TLS(ftplib.FTP_TLS):
@@ -46,10 +56,6 @@ def mc_decrypt(ciphertext, cipher_key):
 
 
 def get_latest_log():
-    mc_key = settings.MC_KEY
-    ftp_host = Config.objects.get(mc_key='ftp_host').mc_value
-    ftp_login = Config.objects.get(mc_key='ftp_login').mc_value
-    ftp_pw_crypt = Config.objects.get(mc_key='ftp_password').mc_value
     mc_ftp = MyFTP_TLS(ftp_host)
     mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, mc_key))
     mc_ftp.prot_p()
@@ -59,10 +65,6 @@ def get_latest_log():
 
 
 def login_and_send(command):
-    mc_key = settings.MC_KEY
-    rcon_host = Config.objects.get(mc_key='rcon_host').mc_value
-    rcon_port = Config.objects.get(mc_key='rcon_port').mc_value
-    rcon_pw_crypt = Config.objects.get(mc_key='rcon_password').mc_value
     try:
         mc = mcrcon.login(rcon_host, int(rcon_port), mc_decrypt(rcon_pw_crypt, mc_key))
         cmd = mcrcon.command(mc, command)
@@ -104,79 +106,78 @@ def process_current_log():
             continue
 
 
+# This absolutely must be renamed
 @app.task
 def check_for_players():
     # this is typically to be run every minute
     # check if anyone is logged in
     result = login_and_send('list')
-    players_without_logout_timestamps = []
-    all_players = Player.objects.all()
     player_pat = re.compile('[^ ]+')
 
+    process_current_log()
+
+    update_logouts(result)
+   
+    # process logins first and update the player model
+    update_active_players(unsent_logins)
+
+    # then grab chats and logouts
+    unsent_chats = Log.objects.filter(msg_content__startswith='<', msg_twilled=None)
+    logouts = Log.objects.filter(msg_content__endswith='left the game', msg_twilled=None)
+    msgs_to_send = unsent_chats | logouts
+
+    for msg in msgs_to_send:
+        pending_messages.append(msg.id)
+
+    send_messages()
+
+    print(result)
+
+def get_active_players:
     # collect list of players in local db who appear to be logged in based on login/logout timestamps
-    for player in all_players.exclude(last_logout=None):
-        if player.last_login > player.last_logout:
+    all_players = Player.objects.all()
+    players_without_logout_timestamps = []
+    for player in all_players:
+        if player.last_login > player.last_logout || player.last_logout == None:
             players_without_logout_timestamps.append(player)
 
-    for player in all_players.filter(last_logout=None):
-        players_without_logout_timestamps.append(player)
+    return players_without_logout_timestamps
 
+
+def update_active_players(unsent_logins):
+    unsent_logins = Log.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
+    for msg in unsent_logins:
+        player_name = re.match(player_pat, msg.msg_content).group()
+        try:
+            player = Player.objects.get_or_create(name=player_name)[0]
+            player.last_login = msg.msg_time
+            player.save()
+
+            pending_messages.append(msg.id)
+        except Exception as e:
+            print(e)
+
+
+def update_logouts(result):
     # if no one is actually logged in, but the local db indicates someone may be logged in, process the current log
     # and mark them as logged out and send the sysop a message that they're logged out
+    players_without_logout_timestamps = get_active_players()
     if result == 'There are 0 of a max 20 players online: ' and len(players_without_logout_timestamps) > 0:
-        process_current_log()
         for player in players_without_logout_timestamps:
             last_logout = Log.objects.filter(msg_content=f'{player.name} left the game').last()
             player.last_logout = last_logout.msg_time
             player.save()
-            last_logout.msg_twilled = timezone.now()
-            last_logout.save()
-            sms = twilio_client.messages.create(
-                from_=f'+{twilio_phone}',
-                body=f'{player} logged out',
-                to=f'+{admin_phone}'
-            )
 
-    # if someone is logged in, process the log to  check for chats, logins and logouts--if any are found,
-    # send them to sysop in chronological order
-    if result != 'There are 0 of a max 20 players online: ':
-        process_current_log()
-        msg_list = []
-        # process logins first and update the player model
-        unsent_logins = Log.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
-        for msg in unsent_logins:
-            player_name = re.match(player_pat, msg.msg_content).group()
-            try:
-                player = Player.objects.get_or_create(name=player_name)[0]
-                player.last_login = msg.msg_time
-                player.save()
-                msg_list.append(msg.id)
-            except Exception as e:
-                print(e)
-            msg.msg_twilled = timezone.now()
-            msg.save()
 
-        # then grab chats and logouts
-        unsent_chats = Log.objects.filter(msg_content__startswith='<', msg_twilled=None)
-        logouts = Log.objects.filter(msg_content__endswith='left the game', msg_twilled=None)
-        unsent_chats_and_logouts = unsent_chats | logouts
-        msgs_to_send = unsent_chats_and_logouts
-
-        for msg in msgs_to_send:
-            msg_list.append(msg.id)
-            msg.msg_twilled = timezone.now()
-            msg.save()
-
-        if len(msg_list) > 0:
-            messages_to_send = Log.objects.filter(id__in=msg_list)
+def send_messages:
+    if len(msg_list) > 0:
+            messages_to_send = Log.objects.filter(id__in=pending_messages).update(msg_twilled=timezone.now())
             messages = '\n'.join([msg_to_send.msg_content for msg_to_send in messages_to_send])
-            sms = twilio_client.messages.create(
+            twilio_client.messages.create(
                 from_=f'+{twilio_phone}',
                 body=f'{messages}',
                 to=f'+{admin_phone}'
             )
-
-    print(result)
 
 
 def process_mc_log_files(log_dir):
