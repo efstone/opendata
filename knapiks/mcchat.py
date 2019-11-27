@@ -138,7 +138,7 @@ def get_active_players:
     all_players = Player.objects.all()
     players_without_logout_timestamps = []
     for player in all_players:
-        if player.last_login > player.last_logout || player.last_logout == None:
+        if player.last_login > player.last_logout or player.last_logout == None:
             players_without_logout_timestamps.append(player)
 
     return players_without_logout_timestamps
