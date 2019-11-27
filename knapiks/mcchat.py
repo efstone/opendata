@@ -165,6 +165,7 @@ def update_logouts(result):
     if result == 'There are 0 of a max 20 players online: ' and len(players_without_logout_timestamps) > 0:
         for player in players_without_logout_timestamps:
             last_logout = Log.objects.filter(msg_content=f'{player.name} left the game').last()
+            pending_messages.append(last_logout.id)
             player.last_logout = last_logout.msg_time
             player.save()
 
