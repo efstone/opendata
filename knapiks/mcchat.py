@@ -172,7 +172,7 @@ def check_for_players():
             messages = '\n'.join([msg_to_send.msg_content for msg_to_send in messages_to_send])
             sms = twilio_client.messages.create(
                 from_=f'+{twilio_phone}',
-                body=f'{messages}',
+                body=f'{messages[:1550]}',
                 to=f'+{admin_phone}'
             )
 
