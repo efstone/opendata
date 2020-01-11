@@ -14,9 +14,10 @@ from twilio.rest import Client
 import glob
 import os
 
-twilio_client = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
-admin_phone = Config.objects.get(mc_key='admin_phone').mc_value
-twilio_phone = Config.objects.get(mc_key='twilio_phone').mc_value
+TWILIO_CLIENT = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
+ADMIN_PHONE = Config.objects.get(mc_key='admin_phone').mc_value
+TWILIO_PHONE = Config.objects.get(mc_key='twilio_phone').mc_value
+DECRYPT_KEY = settings.DECRYPT_KEY
 
 
 class MyFTP_TLS(ftplib.FTP_TLS):
@@ -46,25 +47,23 @@ def mc_decrypt(ciphertext, cipher_key):
 
 
 def get_latest_log():
-    mc_key = settings.MC_KEY
     ftp_host = Config.objects.get(mc_key='ftp_host').mc_value
     ftp_login = Config.objects.get(mc_key='ftp_login').mc_value
     ftp_pw_crypt = Config.objects.get(mc_key='ftp_password').mc_value
-    mc_ftp = MyFTP_TLS(ftp_host)
-    mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, mc_key))
-    mc_ftp.prot_p()
-    mc_log = []
-    mc_ftp.retrlines('RETR /custom-minecraft/logs/latest.log', mc_log.append)
+    with MyFTP_TLS(ftp_host, timeout=30) as mc_ftp:
+        mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, DECRYPT_KEY))
+        mc_ftp.prot_p()
+        mc_log = []
+        mc_ftp.retrlines('RETR /custom-minecraft/logs/latest.log', mc_log.append)
     return mc_log
 
 
 def login_and_send(command):
-    mc_key = settings.MC_KEY
     rcon_host = Config.objects.get(mc_key='rcon_host').mc_value
     rcon_port = Config.objects.get(mc_key='rcon_port').mc_value
     rcon_pw_crypt = Config.objects.get(mc_key='rcon_password').mc_value
     try:
-        mc = mcrcon.login(rcon_host, int(rcon_port), mc_decrypt(rcon_pw_crypt, mc_key))
+        mc = mcrcon.login(rcon_host, int(rcon_port), mc_decrypt(rcon_pw_crypt, DECRYPT_KEY))
         cmd = mcrcon.command(mc, command)
         return cmd
     except Exception as e:
@@ -131,10 +130,10 @@ def check_for_players():
             player.save()
             last_logout.msg_twilled = timezone.now()
             last_logout.save()
-            sms = twilio_client.messages.create(
-                from_=f'+{twilio_phone}',
+            sms = TWILIO_CLIENT.messages.create(
+                from_=f'+{TWILIO_PHONE}',
                 body=f'{player} logged out',
-                to=f'+{admin_phone}'
+                to=f'+{ADMIN_PHONE}'
             )
 
     # if someone is logged in, process the log to  check for chats, logins and logouts--if any are found,
@@ -170,10 +169,10 @@ def check_for_players():
         if len(msg_list) > 0:
             messages_to_send = Log.objects.filter(id__in=msg_list)
             messages = '\n'.join([msg_to_send.msg_content for msg_to_send in messages_to_send])
-            sms = twilio_client.messages.create(
-                from_=f'+{twilio_phone}',
+            sms = TWILIO_CLIENT.messages.create(
+                from_=f'+{TWILIO_PHONE}',
                 body=f'{messages[:1550]}',
-                to=f'+{admin_phone}'
+                to=f'+{ADMIN_PHONE}'
             )
 
     print(result)
