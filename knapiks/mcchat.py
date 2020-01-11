@@ -50,12 +50,18 @@ def get_latest_log():
     ftp_host = Config.objects.get(mc_key='ftp_host').mc_value
     ftp_login = Config.objects.get(mc_key='ftp_login').mc_value
     ftp_pw_crypt = Config.objects.get(mc_key='ftp_password').mc_value
-    with MyFTP_TLS(ftp_host, timeout=30) as mc_ftp:
-        mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, DECRYPT_KEY))
-        mc_ftp.prot_p()
-        mc_log = []
-        mc_ftp.retrlines('RETR /custom-minecraft/logs/latest.log', mc_log.append)
-    return mc_log
+    try:
+        with MyFTP_TLS(ftp_host, timeout=30) as mc_ftp:
+            try:
+                mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, DECRYPT_KEY))
+                mc_ftp.prot_p()
+                mc_log = []
+                mc_ftp.retrlines('RETR /custom-minecraft/logs/latest.log', mc_log.append)
+                return mc_log
+            except Exception as login_error:
+                print(f"Login/download failed with error: {login_error}")
+    except Exception as connection_error:
+        print(f"Connection failed with error: {connection_error}")
 
 
 def login_and_send(command):
