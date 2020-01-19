@@ -187,8 +187,9 @@ def check_for_players():
 def process_mc_log_files(log_dir):
     log_files = glob.glob(f'{log_dir}/*.log')
     date_pat = re.compile('\d{4}-\d{2}-\d{2}')
-    msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!)')
+    msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!|^Botania|^Chameleon|^Storage)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
+    utc_tz = pytz.timezone('UTC')
     for log_file in log_files:
         log_date_str_search = re.match(date_pat, os.path.basename(log_file))
         if log_date_str_search is None:
@@ -207,16 +208,15 @@ def process_mc_log_files(log_dir):
             except Exception as e:
                 print(f"{e} on line: {line}")
                 continue
-            utc_tz = pytz.timezone('UTC')
             msg_time = datetime.combine(datetime.strptime(log_date_str, "%Y-%m-%d").date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
             if re.match(msgs_to_omit_pat, msg_content) is None:
                 new_msg = Log()
                 new_msg.msg_time = utc_tz.localize(msg_time)
                 new_msg.msg_content = msg_content
                 new_msg.msg_type = msg_type
+                try:
+                    new_msg.save()
+                except IntegrityError:
+                    continue
             else:
-                continue
-            try:
-                new_msg.save()
-            except IntegrityError:
                 continue
