@@ -187,7 +187,7 @@ def check_for_players():
 def process_mc_log_files(log_dir):
     log_files = glob.glob(f'{log_dir}/*.log')
     date_pat = re.compile('\d{4}-\d{2}-\d{2}')
-    msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!|^Botania|^Chameleon|^Storage)')
+    msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
     utc_tz = pytz.timezone('UTC')
     for log_file in log_files:
@@ -200,6 +200,9 @@ def process_mc_log_files(log_dir):
                 log_content = f.read()
                 log = log_content.split('\n')
         for line in log:
+            known_bad_lines_pat = re.compile('(^Botania|^Chameleon|^Storage)')
+            if re.match(known_bad_lines_pat, line) is not None:
+                continue
             log_re = re.match(mc_log_pat, line)
             try:
                 msg_time_text = log_re.group(1)
