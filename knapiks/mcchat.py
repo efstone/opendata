@@ -85,7 +85,11 @@ def process_current_log():
     log = get_latest_log()
     msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
+    utc_tz = pytz.timezone('UTC')
     for line in log:
+        known_bad_lines_pat = re.compile('(^Botania|^Chameleon|^Storage)')
+        if re.match(known_bad_lines_pat, line) is not None:
+            continue
         log_re = re.match(mc_log_pat, line)
         try:
             msg_time_text = log_re.group(1)
@@ -94,18 +98,17 @@ def process_current_log():
         except Exception as e:
             print(f"{e} on line: {line}")
             continue
-        utc_tz = pytz.timezone('UTC')
         msg_time = datetime.combine(timezone.now().date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
         if re.match(msgs_to_omit_pat, msg_content) is None:
             new_msg = Log()
             new_msg.msg_time = utc_tz.localize(msg_time)
             new_msg.msg_content = msg_content
             new_msg.msg_type = msg_type
+            try:
+                new_msg.save()
+            except IntegrityError:
+                continue
         else:
-            continue
-        try:
-            new_msg.save()
-        except IntegrityError:
             continue
 
 
