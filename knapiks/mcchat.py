@@ -18,6 +18,9 @@ TWILIO_CLIENT = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
 ADMIN_PHONE = Config.objects.get(mc_key='admin_phone').mc_value
 TWILIO_PHONE = Config.objects.get(mc_key='twilio_phone').mc_value
 DECRYPT_KEY = settings.DECRYPT_KEY
+RCON_HOST = Config.objects.get(mc_key='rcon_host').mc_value
+RCON_PORT = Config.objects.get(mc_key='rcon_port').mc_value
+RCON_PW_CRYPT = Config.objects.get(mc_key='rcon_password').mc_value
 
 
 class MyFTP_TLS(ftplib.FTP_TLS):
@@ -65,17 +68,14 @@ def get_latest_log():
 
 
 def login_and_send(command):
-    rcon_host = Config.objects.get(mc_key='rcon_host').mc_value
-    rcon_port = Config.objects.get(mc_key='rcon_port').mc_value
-    rcon_pw_crypt = Config.objects.get(mc_key='rcon_password').mc_value
     try:
-        mc = mcrcon.login(rcon_host, int(rcon_port), mc_decrypt(rcon_pw_crypt, DECRYPT_KEY))
+        mc = mcrcon.login(RCON_HOST, int(RCON_PORT), mc_decrypt(RCON_PW_CRYPT, DECRYPT_KEY))
         cmd = mcrcon.command(mc, command)
         return cmd
     except Exception as e:
         try:
             mc.close()
-        except:
+        except Exception as e:
             pass
         return e
 
