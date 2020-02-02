@@ -32,6 +32,7 @@ def docket_eater(num_runs):
     options.add_argument('headless')
     options.add_argument('disable-gpu')
     driver = webdriver.Chrome(chrome_options=options)
+    case_num_pat = re.compile("[A-Z0-9]{1,4}-.*")
     # loop now inside function -- count is passed to function
     # case_list = []
     # for filename in glob.glob('/Users/efstone/Downloads/eviction_cases/*-*.html'):
@@ -59,10 +60,10 @@ def docket_eater(num_runs):
         driver.find_element_by_id("SearchSubmit").click()
         # grabbing eviction links with bs4
         soup = BeautifulSoup(driver.page_source, 'html.parser')
-        print(f'found {len(soup.find_all("a", text=re.compile("[A-Z0-9]{1,3}-.*")))} links')
-        for link in soup.find_all("a", text=re.compile("[A-Z0-9]{1,3}-.*")):
+        print(f'found {len(soup.find_all("a", text=case_num_pat))} links')
+        for link in soup.find_all("a", text=case_num_pat):
             print(f"checking case {link.text}")
-            if len(link.text) > 0 and re.match('[A-Z0-9]{1,3}-.*', link.text) is not None:
+            if len(link.text) > 0 and re.match(case_num_pat, link.text) is not None:
                 if Case.objects.filter(case_num=link.text).count() == 0:
                     print(f"downloading case {link.text}")
                     driver.get("http://justice1.dentoncounty.com/PublicAccess/" + link.get('href'))
