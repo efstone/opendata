@@ -45,9 +45,9 @@ def docket_eater(num_runs):
         Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text("------ All JP Courts ------")
         # Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text("Justice of the Peace Pct #4")
         # for civil records
-        # driver.find_element_by_link_text("JP & County Court: Civil, Family & Probate Case Records").click()
+        driver.find_element_by_link_text("JP & County Court: Civil, Family & Probate Case Records").click()
         # for criminal records
-        driver.find_element_by_link_text("JP & County Court: Criminal Case Records").click()
+        # driver.find_element_by_link_text("JP & County Court: Criminal Case Records").click()
         driver.find_element_by_id("DateFiled").click()
         driver.find_element_by_id("DateFiledOnAfter").clear()
         driver.find_element_by_id("DateFiledOnAfter").send_keys((last_date + timedelta(days=1)).strftime("%m/%d/%Y"))
