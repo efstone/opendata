@@ -16,3 +16,8 @@ class PartyAdmin(admin.ModelAdmin):
 @admin.register(Disposition)
 class DispositionAdmin(admin.ModelAdmin):
     list_display = ['name']
+
+
+@admin.register(CaseConfig)
+class CaseConfigAdmin(admin.ModelAdmin):
+    list_display = ['eviction_key', 'eviction_value']
