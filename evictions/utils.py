@@ -61,10 +61,10 @@ def docket_eater(num_runs):
                     case = Case()
                     case.page_source = driver.page_source
                     case.case_num = link.text
-                    soup = BeautifulSoup(driver.page_source, "html.parser")
+                    cur_case_soup = BeautifulSoup(driver.page_source, "html.parser")
                     print(link.text)
-                    if soup.find(string=re.compile("Date Filed")) is not None:
-                        filing_date = soup.find(string=re.compile("Date Filed")).parent.parent.find('b').get_text()
+                    if cur_case_soup.find(string=re.compile("Date Filed")) is not None:
+                        filing_date = cur_case_soup.find(string=re.compile("Date Filed")).parent.parent.find('b').get_text()
                         case.filing_date = pytz.timezone('US/Central').localize(datetime.strptime(filing_date, "%m/%d/%Y"))
                     else:
                         print(case.case_num + ': has no filing date')
