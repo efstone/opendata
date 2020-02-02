@@ -37,9 +37,11 @@ def docket_eater(num_runs):
     # for filename in glob.glob('/Users/efstone/Downloads/eviction_cases/*-*.html'):
     #     case_list.append(os.path.split(filename)[1][:-5])
     for i in range(1, num_runs):
-        last_date = Case.objects.last().filing_date
+        start_date_text = Config.objects.get(eviction_key='start_date')
+        start_date_as_date = start_date_text.strptime("%m/%d/%Y")
+        start_date = pytz.timezone('US/Central').localize(start_date_as_date)
         # Create a new instance of the Firefox driver (also opens FireFox)
-        if last_date > timezone.now():
+        if start_date > timezone.now():
             break
         driver.get("http://justice1.dentoncounty.com/PublicAccess/default.aspx")
         Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text("------ All JP Courts ------")
@@ -50,15 +52,15 @@ def docket_eater(num_runs):
         # driver.find_element_by_link_text("JP & County Court: Criminal Case Records").click()
         driver.find_element_by_id("DateFiled").click()
         driver.find_element_by_id("DateFiledOnAfter").clear()
-        driver.find_element_by_id("DateFiledOnAfter").send_keys((last_date + timedelta(days=1)).strftime("%m/%d/%Y"))
+        driver.find_element_by_id("DateFiledOnAfter").send_keys((start_date + timedelta(days=1)).strftime("%m/%d/%Y"))
         driver.find_element_by_id("DateFiledOnBefore").clear()
-        driver.find_element_by_id("DateFiledOnBefore").send_keys((last_date + timedelta(days=3)).strftime("%m/%d/%Y"))
-        print(f'checking range {(last_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(last_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
+        driver.find_element_by_id("DateFiledOnBefore").send_keys((start_date + timedelta(days=3)).strftime("%m/%d/%Y"))
+        print(f'checking range {(start_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(start_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
         driver.find_element_by_id("SearchSubmit").click()
         # grabbing eviction links with bs4
         soup = BeautifulSoup(driver.page_source, 'html.parser')
-        print(f'found {len(soup.find_all("a"))} links')
-        for link in soup.find_all("a"):
+        print(f'found {len(soup.find_all("a", text=re.compile("[A-Z0-9]{1,3}-.*")))} links')
+        for link in soup.find_all("a", text=re.compile("[A-Z0-9]{1,3}-.*")):
             print(f"checking case {link.text}")
             if len(link.text) > 0 and re.match('[A-Z0-9]{1,3}-.*', link.text) is not None:
                 if Case.objects.filter(case_num=link.text).count() == 0:
@@ -79,7 +81,9 @@ def docket_eater(num_runs):
                     #     f.write(driver.page_source)
         # check for too many records
         if soup.find(string=re.compile("Record Count:")).parent.parent.parent.find_all('b')[1].get_text() == '400':
-            print(last_date.strftime("%m/%d/%Y") + ' returned too many records')
+            print(start_date.strftime("%m/%d/%Y") + ' returned too many records')
+        start_date_text = (start_date + timedelta(days=3)).strftime("%m/%d/%Y")
+        start_date_text.save()
     driver.quit()
 
 

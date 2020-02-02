@@ -75,3 +75,15 @@ class Attorney(models.Model):
 
     class Meta:
         db_table = 'denton_docket_attorney'
+
+
+class Config(models.Model):
+    eviction_key = models.CharField(max_length=150, default='', unique=True)
+    eviction_value = models.CharField(max_length=350, default='')
+
+    def __str__(self):
+        return f"{self.eviction_key}: {self.eviction_value}"
+
+    class Meta:
+        verbose_name = 'Config'
+        verbose_name_plural = 'Configs'
