@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.db import connection
 import json
 import platform
+from docketdata.celery import app
 
 if platform.system() == 'Darwin':
     chrome_path = "/Applications/Google Chrome.app/Contents/macOS/Google Chrome"
@@ -19,6 +20,7 @@ else:
     driver_path = '/usr/bin/chromedriver'
 
 
+@app.task
 def docket_eater(num_runs):
     # this function uses the Selenium driver to open the main page of the Denton County court records search
     # and selects the civil dockets for the JP Courts, then enters a 5-day date range based on the last date
