@@ -82,7 +82,7 @@ def docket_eater(num_runs):
         # check for too many records
         if soup.find(string=re.compile("Record Count:")).parent.parent.parent.find_all('b')[1].get_text() == '400':
             print(start_date.strftime("%m/%d/%Y") + ' returned too many records')
-        start_date_text = (start_date + timedelta(days=3)).strftime("%m/%d/%Y")
+        start_date_text.eviction_value = (start_date + timedelta(days=3)).strftime("%m/%d/%Y")
         start_date_text.save()
     driver.quit()
 
