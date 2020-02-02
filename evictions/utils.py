@@ -53,18 +53,22 @@ def docket_eater(num_runs):
         driver.find_element_by_id("DateFiledOnAfter").send_keys((last_date + timedelta(days=1)).strftime("%m/%d/%Y"))
         driver.find_element_by_id("DateFiledOnBefore").clear()
         driver.find_element_by_id("DateFiledOnBefore").send_keys((last_date + timedelta(days=3)).strftime("%m/%d/%Y"))
+        print(f'checking range {(last_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(last_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
         driver.find_element_by_id("SearchSubmit").click()
         # grabbing eviction links with bs4
         soup = BeautifulSoup(driver.page_source, 'html.parser')
+        print(f'found {len(soup.find_all("a"))} links')
         for link in soup.find_all("a"):
+            print(f"checking case {link.text}")
             if len(link.text) > 0 and re.match('[A-Z0-9]{1,3}-.*', link.text) is not None:
                 if Case.objects.filter(case_num=link.text).count() == 0:
+                    print(f"downloading case {link.text}")
                     driver.get("http://justice1.dentoncounty.com/PublicAccess/" + link.get('href'))
                     case = Case()
                     case.page_source = driver.page_source
                     case.case_num = link.text
                     cur_case_soup = BeautifulSoup(driver.page_source, "html.parser")
-                    print(link.text)
+                    # print(link.text)
                     if cur_case_soup.find(string=re.compile("Date Filed")) is not None:
                         filing_date = cur_case_soup.find(string=re.compile("Date Filed")).parent.parent.find('b').get_text()
                         case.filing_date = pytz.timezone('US/Central').localize(datetime.strptime(filing_date, "%m/%d/%Y"))
