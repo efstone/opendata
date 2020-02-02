@@ -9,6 +9,14 @@ from django.db.utils import IntegrityError
 from django.utils import timezone
 from django.db import connection
 import json
+import platform
+
+if platform.system() == 'Darwin':
+    chrome_path = "/Applications/Google Chrome.app/Contents/macOS/Google Chrome"
+    driver_path = None
+else:
+    chrome_path = "/usr/bin/chromium-browser"
+    driver_path = '/usr/bin/chromedriver'
 
 
 def docket_eater(num_runs):
@@ -18,19 +26,16 @@ def docket_eater(num_runs):
     # and saves the source of the visited page locally.
     # driver = webdriver.Firefox()
     options = webdriver.ChromeOptions()
-    options.binary_location = "/Applications/Google Chrome.app/Contents/macOS/Google Chrome"
+    options.binary_location = chrome_path
     options.add_argument('headless')
     options.add_argument('disable-gpu')
     driver = webdriver.Chrome(chrome_options=options)
     # loop now inside function -- count is passed to function
-    case_list = []
-    for filename in glob.glob('/Users/efstone/Downloads/eviction_cases/*-*.html'):
-        case_list.append(os.path.split(filename)[1][:-5])
+    # case_list = []
+    # for filename in glob.glob('/Users/efstone/Downloads/eviction_cases/*-*.html'):
+    #     case_list.append(os.path.split(filename)[1][:-5])
     for i in range(1, num_runs):
-        with open('/Users/efstone/Documents/docket_date_start.txt', 'r') as f:
-            date_string = f.read()
-            date_string = date_string.strip()
-            last_date = datetime.strptime(date_string, "%m/%d/%Y")
+        last_date = Case.objects.last().filing_date
         # Create a new instance of the Firefox driver (also opens FireFox)
         if last_date > datetime.now():
             break
@@ -51,17 +56,24 @@ def docket_eater(num_runs):
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         for link in soup.find_all("a"):
             if len(link.text) > 0 and re.match('[A-Z0-9]{1,3}-.*', link.text) is not None:
-                if link.text not in case_list:
+                if Case.objects.filter(case_num=link.text).count() == 0:
                     driver.get("http://justice1.dentoncounty.com/PublicAccess/" + link.get('href'))
-                    with open('/Users/efstone/Downloads/eviction_cases/' + link.text + '.html', 'w') as f:
-                        f.write(driver.page_source)
+                    case = Case()
+                    case.page_source = driver.page_source
+                    case.case_num = link.text
+                    soup = BeautifulSoup(driver.page_source, "html.parser")
                     print(link.text)
+                    if soup.find(string=re.compile("Date Filed")) is not None:
+                        filing_date = soup.find(string=re.compile("Date Filed")).parent.parent.find('b').get_text()
+                        case.filing_date = pytz.timezone('US/Central').localize(datetime.strptime(filing_date, "%m/%d/%Y"))
+                    else:
+                        print(case.case_num + ': has no filing date')
+                    case.save()
+                    # with open('/Users/efstone/Downloads/eviction_cases/' + link.text + '.html', 'w') as f:
+                    #     f.write(driver.page_source)
         # check for too many records
         if soup.find(string=re.compile("Record Count:")).parent.parent.parent.find_all('b')[1].get_text() == '400':
             print(last_date.strftime("%m/%d/%Y") + ' returned too many records')
-        with open('/Users/efstone/Documents/docket_date_start.txt', 'w') as f:
-            f.write((last_date + timedelta(days=3)).strftime("%m/%d/%Y"))
-        print(last_date.strftime("%m/%d/%Y"))
     driver.quit()
 
 
