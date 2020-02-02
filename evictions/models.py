@@ -77,7 +77,7 @@ class Attorney(models.Model):
         db_table = 'denton_docket_attorney'
 
 
-class Config(models.Model):
+class CaseConfig(models.Model):
     eviction_key = models.CharField(max_length=150, default='', unique=True)
     eviction_value = models.CharField(max_length=350, default='')
 
