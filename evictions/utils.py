@@ -38,7 +38,7 @@ def docket_eater(num_runs):
     #     case_list.append(os.path.split(filename)[1][:-5])
     for i in range(1, num_runs):
         start_date_text = Config.objects.get(eviction_key='start_date')
-        start_date_as_date = start_date_text.strptime("%m/%d/%Y")
+        start_date_as_date = datetime.strptime(start_date_text.eviction_value, "%m/%d/%Y")
         start_date = pytz.timezone('US/Central').localize(start_date_as_date)
         # Create a new instance of the Firefox driver (also opens FireFox)
         if start_date > timezone.now():
