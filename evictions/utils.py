@@ -37,7 +37,7 @@ def docket_eater(num_runs):
     for i in range(1, num_runs):
         last_date = Case.objects.last().filing_date
         # Create a new instance of the Firefox driver (also opens FireFox)
-        if last_date > datetime.now():
+        if last_date > timezone.now():
             break
         driver.get("http://justice1.dentoncounty.com/PublicAccess/default.aspx")
         Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text("------ All JP Courts ------")
