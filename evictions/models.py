@@ -15,7 +15,7 @@ class Disposition(models.Model):
 
 
 class Case(models.Model):
-    case_num = models.CharField(max_length=17, unique=True)
+    case_num = models.CharField(max_length=30, unique=True)
     filing_date = models.DateTimeField(default=None, null=True)
     page_source = models.TextField()
     disposition = models.ForeignKey(Disposition, db_constraint=False, null=True, default=None, on_delete=models.DO_NOTHING)
