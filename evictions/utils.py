@@ -88,6 +88,7 @@ def docket_eater(num_runs):
     driver.quit()
 
 
+@app.task
 def parse_case():
     # for case in Case.objects.filter(court=''):
     for case in Case.objects.filter(case_type='Evictions'):
@@ -145,3 +146,4 @@ def parse_case():
                         attorney.parties.add(party)
                         attorney.cases.add(case)
                         attorney.save()
+        print(f"{case.case_num} - {case.case_type} - {case.court}")
