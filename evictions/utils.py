@@ -100,7 +100,7 @@ def parse_case(skip_queries: False):
             # extract judge
             cursor.execute("UPDATE denton_docket_case SET judge = (regexp_match(page_source, '(?:Judicial Officer:.*?<b>)(.*?)<\/b>'))[1] WHERE judge = '' AND page_source ~ 'Judicial Officer:.*?<b>.*?<\/b>';")
     total_cases = Case.objects.count()
-    iterations = total_cases/10000
+    iterations = int(round(total_cases / 10000)) + 1
     for i in range(iterations):
         for case in Case.objects.filter(disposition_id=None)[:10000]:
             soup = BeautifulSoup(case.page_source, 'html.parser')
