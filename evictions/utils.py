@@ -99,37 +99,40 @@ def parse_case(skip_queries: False):
             cursor.execute("UPDATE denton_docket_case SET court = (regexp_match(page_source, '(?:Location:.*?<b>)(.*?)<\/b>'))[1] WHERE court = '' AND page_source ~ 'Location:.*?<b>.*?<\/b>';")
             # extract judge
             cursor.execute("UPDATE denton_docket_case SET judge = (regexp_match(page_source, '(?:Judicial Officer:.*?<b>)(.*?)<\/b>'))[1] WHERE judge = '' AND page_source ~ 'Judicial Officer:.*?<b>.*?<\/b>';")
-    for case in Case.objects.filter(disposition_id=None):
-        soup = BeautifulSoup(case.page_source, 'html.parser')
-        # display court
-        # print(soup.find(string=re.compile("Justice of the Peace Pct")))
-        if case.disposition is None:
-            try:
-                disposition_text = soup.find(headers=re.compile("RDISPDATE")).parent.parent.find('b').get_text()
-                disposition = Disposition.objects.get_or_create(name=disposition_text)[0]
-                case.disposition = disposition
-            except AttributeError:
-                pass
-        case.save()
-        # party finder!!! wooo hooo!
-        for idx, row in enumerate(soup.find_all(id=re.compile("PIr"))):
-            if idx == 0:
-                ptype = row.get_text()
-            if idx % 2 == 0:
-                ptype = row.get_text()
-            else:
-                # print(str(ptype) + ': ' + str(row.get_text()))
-                party = Party.objects.get_or_create(name=row.get_text())[0]
-                # party.cases.add(case)
-                case.save()
-                a1 = Appearance(case=case, party=party, party_type=ptype)
-                a1.save()
-                party.save()
-                # attorney finder
-                if row.parent.find('i') is not None:
-                    if row.parent.find('i').get_text() == 'Retained':
-                        attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
-                        attorney.parties.add(party)
-                        attorney.cases.add(case)
-                        attorney.save()
-        print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
+    total_cases = Case.objects.count()
+    iterations = total_cases/10000
+    for i in range(iterations):
+        for case in Case.objects.filter(disposition_id=None)[:10000]:
+            soup = BeautifulSoup(case.page_source, 'html.parser')
+            # display court
+            # print(soup.find(string=re.compile("Justice of the Peace Pct")))
+            if case.disposition is None:
+                try:
+                    disposition_text = soup.find(headers=re.compile("RDISPDATE")).parent.parent.find('b').get_text()
+                    disposition = Disposition.objects.get_or_create(name=disposition_text)[0]
+                    case.disposition = disposition
+                except AttributeError:
+                    pass
+            case.save()
+            # party finder!!! wooo hooo!
+            for idx, row in enumerate(soup.find_all(id=re.compile("PIr"))):
+                if idx == 0:
+                    ptype = row.get_text()
+                if idx % 2 == 0:
+                    ptype = row.get_text()
+                else:
+                    # print(str(ptype) + ': ' + str(row.get_text()))
+                    party = Party.objects.get_or_create(name=row.get_text())[0]
+                    # party.cases.add(case)
+                    case.save()
+                    a1 = Appearance(case=case, party=party, party_type=ptype)
+                    a1.save()
+                    party.save()
+                    # attorney finder
+                    if row.parent.find('i') is not None:
+                        if row.parent.find('i').get_text() == 'Retained':
+                            attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
+                            attorney.parties.add(party)
+                            attorney.cases.add(case)
+                            attorney.save()
+            print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
