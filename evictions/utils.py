@@ -89,34 +89,20 @@ def docket_eater(num_runs):
 
 
 @app.task
-def parse_case():
+def parse_case(skip_queries: False):
     # for case in Case.objects.filter(court=''):
-    for case in Case.objects.filter(case_type='Evictions'):
+    if skip_queries is False:
+        with connection.cursor() as cursor:
+            # extract case type
+            cursor.execute("UPDATE denton_docket_case SET case_type = (regexp_match(page_source, '(?:Case Type:.*?<b>)(.*?)<\/b>'))[1] WHERE case_type = '' AND page_source ~ 'Case Type:.*?<b>.*?<\/b>';")
+            # extract court
+            cursor.execute("UPDATE denton_docket_case SET court = (regexp_match(page_source, '(?:Location:.*?<b>)(.*?)<\/b>'))[1] WHERE court = '' AND page_source ~ 'Location:.*?<b>.*?<\/b>';")
+            # extract judge
+            cursor.execute("UPDATE denton_docket_case SET judge = (regexp_match(page_source, '(?:Judicial Officer:.*?<b>)(.*?)<\/b>'))[1] WHERE judge = '' AND page_source ~ 'Judicial Officer:.*?<b>.*?<\/b>';")
+    for case in Case.objects.filter(disposition_id=None):
         soup = BeautifulSoup(case.page_source, 'html.parser')
         # display court
         # print(soup.find(string=re.compile("Justice of the Peace Pct")))
-        if case.court == '':
-            case.court = soup.find(string=re.compile("Location:")).parent.parent.find('b').get_text()
-        # display judge
-        # print(soup.find(string=re.compile("Judicial Officer")).parent.parent.find('b').get_text())
-        if case.judge == '':
-            if soup.find(string=re.compile("Judicial Officer")) is not None:
-                case.judge = soup.find(string=re.compile("Judicial Officer")).parent.parent.find('b').get_text()
-            else:
-                print(case.case_num + ': has no judge')
-        # display date filed
-        # print(soup.find(string=re.compile("Date Filed")).parent.parent.find('b').get_text())
-        if case.filing_date is None:
-            if soup.find(string=re.compile("Date Filed")) is not None:
-                filing_date = soup.find(string=re.compile("Date Filed")).parent.parent.find('b').get_text()
-                case.filing_date = pytz.timezone('US/Central').localize(datetime.strptime(filing_date, "%m/%d/%Y"))
-            else:
-                print(case.case_num + ': has no filing date')
-        # case type
-        if case.case_type == '':
-            case.case_type = soup.find(string=re.compile("Case Type")).parent.parent.find('b').get_text()
-        # case disposition
-        # print(soup.find(headers=re.compile("RDISPDATE")).parent.parent.find('b').get_text())
         if case.disposition is None:
             try:
                 disposition_text = soup.find(headers=re.compile("RDISPDATE")).parent.parent.find('b').get_text()
@@ -146,4 +132,4 @@ def parse_case():
                         attorney.parties.add(party)
                         attorney.cases.add(case)
                         attorney.save()
-        print(f"{case.case_num} - {case.case_type} - {case.court}")
+        print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
