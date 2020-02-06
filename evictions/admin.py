@@ -20,4 +20,4 @@ class DispositionAdmin(admin.ModelAdmin):
 
 @admin.register(CaseConfig)
 class CaseConfigAdmin(admin.ModelAdmin):
-    list_display = ['eviction_key', 'eviction_value']
+    list_display = ['key', 'value']
