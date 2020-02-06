@@ -82,7 +82,7 @@ class CaseConfig(models.Model):
     value = models.CharField(max_length=350, default='')
 
     def __str__(self):
-        return f"{self.eviction_key}: {self.eviction_value}"
+        return f"{self.key}: {self.value}"
 
     class Meta:
         verbose_name = 'Config'
