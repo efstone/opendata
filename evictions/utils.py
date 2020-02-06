@@ -103,7 +103,7 @@ def parse_case(**kwargs):
     total_cases = Case.objects.count()
     iterations = int(round(total_cases / 10000)) + 1
     for i in range(iterations):
-        for case in Case.objects.filter(appearance__party=None)[:10000]:
+        for cnum, case in enumerate(Case.objects.filter(appearance__party=None)[:10000]):
             soup = BeautifulSoup(case.page_source, 'html.parser')
             # disposition extractor was here -- please redo it in SQL
             for idx, row in enumerate(soup.find_all(id=re.compile("PIr"))):
@@ -124,7 +124,7 @@ def parse_case(**kwargs):
                             attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
                             appearance.attorney_set.add(attorney)
                             attorney.save()
-            if i % 1000 == 0:
+            if cnum % 100 == 0:
                 print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
 
