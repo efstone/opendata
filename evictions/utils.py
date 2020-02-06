@@ -129,4 +129,3 @@ def parse_case(**kwargs):
                 print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
 
-    parse_case()
