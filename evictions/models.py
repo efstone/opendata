@@ -78,8 +78,8 @@ class Attorney(models.Model):
 
 
 class CaseConfig(models.Model):
-    eviction_key = models.CharField(max_length=150, default='', unique=True)
-    eviction_value = models.CharField(max_length=350, default='')
+    key = models.CharField(max_length=150, default='', unique=True)
+    value = models.CharField(max_length=350, default='')
 
     def __str__(self):
         return f"{self.eviction_key}: {self.eviction_value}"

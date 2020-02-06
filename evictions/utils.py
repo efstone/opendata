@@ -34,57 +34,61 @@ def docket_eater(num_runs):
     options.add_argument('disable-gpu')
     driver = webdriver.Chrome(chrome_options=options)
     case_num_pat = re.compile("[A-Z0-9]{1,4}-.*")
+    court_choice_list = json.loads(CaseConfig.objects.get(key='court_choice_list').value)
+    case_type_list = json.loads(CaseConfig.objects.get(key='case_type_list').value)
+    start_date_text = CaseConfig.objects.get(key='start_date')
+    start_date_as_date = datetime.strptime(start_date_text.value, "%m/%d/%Y")
+    start_date = pytz.timezone('US/Central').localize(start_date_as_date)
     # loop now inside function -- count is passed to function
     # case_list = []
     # for filename in glob.glob('/Users/efstone/Downloads/eviction_cases/*-*.html'):
     #     case_list.append(os.path.split(filename)[1][:-5])
-    for i in range(1, num_runs):
-        start_date_text = CaseConfig.objects.get(eviction_key='start_date')
-        start_date_as_date = datetime.strptime(start_date_text.eviction_value, "%m/%d/%Y")
-        start_date = pytz.timezone('US/Central').localize(start_date_as_date)
-        # Create a new instance of the Firefox driver (also opens FireFox)
-        if start_date > timezone.now():
-            break
-        driver.get("http://justice1.dentoncounty.com/PublicAccess/default.aspx")
-        Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text(f"{CaseConfig.objects.get(eviction_key='court_type').eviction_value}")
-        # Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text("Justice of the Peace Pct #4")
-        # for civil records
-        driver.find_element_by_link_text(f"{CaseConfig.objects.get(eviction_key='case_type').eviction_value}").click()
-        # for criminal records
-        # driver.find_element_by_link_text("JP & County Court: Criminal Case Records").click()
-        driver.find_element_by_id("DateFiled").click()
-        driver.find_element_by_id("DateFiledOnAfter").clear()
-        driver.find_element_by_id("DateFiledOnAfter").send_keys((start_date + timedelta(days=1)).strftime("%m/%d/%Y"))
-        driver.find_element_by_id("DateFiledOnBefore").clear()
-        driver.find_element_by_id("DateFiledOnBefore").send_keys((start_date + timedelta(days=3)).strftime("%m/%d/%Y"))
-        print(f'checking range {(start_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(start_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
-        driver.find_element_by_id("SearchSubmit").click()
-        # grabbing eviction links with bs4
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        print(f'found {len(soup.find_all("a", text=case_num_pat))} links')
-        for link in soup.find_all("a", text=case_num_pat):
-            print(f"checking case {link.text}")
-            if len(link.text) > 0 and re.match(case_num_pat, link.text) is not None:
-                if Case.objects.filter(case_num=link.text).count() == 0:
-                    print(f"downloading case {link.text}")
-                    driver.get("http://justice1.dentoncounty.com/PublicAccess/" + link.get('href'))
-                    case = Case()
-                    case.page_source = driver.page_source
-                    case.case_num = link.text
-                    cur_case_soup = BeautifulSoup(driver.page_source, "html.parser")
-                    # print(link.text)
-                    if cur_case_soup.find(string=re.compile("Date Filed")) is not None:
-                        filing_date = cur_case_soup.find(string=re.compile("Date Filed")).parent.parent.find('b').get_text()
-                        case.filing_date = pytz.timezone('US/Central').localize(datetime.strptime(filing_date, "%m/%d/%Y"))
-                    else:
-                        print(case.case_num + ': has no filing date')
-                    case.save()
-                    # with open('/Users/efstone/Downloads/eviction_cases/' + link.text + '.html', 'w') as f:
-                    #     f.write(driver.page_source)
-        # check for too many records
-        if soup.find(string=re.compile("Record Count:")).parent.parent.parent.find_all('b')[1].get_text() == '400':
-            print(start_date.strftime("%m/%d/%Y") + ' returned too many records')
-        start_date_text.eviction_value = (start_date + timedelta(days=3)).strftime("%m/%d/%Y")
+    for court_choice in court_choice_list:
+        for case_type in case_type_list:
+            for i in range(1, num_runs):
+                # Create a new instance of the Firefox driver (also opens FireFox)
+                if start_date > timezone.now():
+                    break
+                driver.get("http://justice1.dentoncounty.com/PublicAccess/default.aspx")
+                Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text(f"{court_choice}")
+                # Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text("Justice of the Peace Pct #4")
+                # for civil records
+                driver.find_element_by_link_text(f"{CaseConfig.objects.get(key='case_type').value}").click()
+                # for criminal records
+                # driver.find_element_by_link_text("JP & County Court: Criminal Case Records").click()
+                driver.find_element_by_id("DateFiled").click()
+                driver.find_element_by_id("DateFiledOnAfter").clear()
+                driver.find_element_by_id("DateFiledOnAfter").send_keys((start_date + timedelta(days=1)).strftime("%m/%d/%Y"))
+                driver.find_element_by_id("DateFiledOnBefore").clear()
+                driver.find_element_by_id("DateFiledOnBefore").send_keys((start_date + timedelta(days=3)).strftime("%m/%d/%Y"))
+                print(f'checking range {(start_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(start_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
+                driver.find_element_by_id("SearchSubmit").click()
+                # grabbing eviction links with bs4
+                soup = BeautifulSoup(driver.page_source, 'html.parser')
+                print(f'found {len(soup.find_all("a", text=case_num_pat))} links')
+                for link in soup.find_all("a", text=case_num_pat):
+                    print(f"checking case {link.text}")
+                    if len(link.text) > 0 and re.match(case_num_pat, link.text) is not None:
+                        if Case.objects.filter(case_num=link.text).count() == 0:
+                            print(f"downloading case {link.text}")
+                            driver.get("http://justice1.dentoncounty.com/PublicAccess/" + link.get('href'))
+                            case = Case()
+                            case.page_source = driver.page_source
+                            case.case_num = link.text
+                            cur_case_soup = BeautifulSoup(driver.page_source, "html.parser")
+                            # print(link.text)
+                            if cur_case_soup.find(string=re.compile("Date Filed")) is not None:
+                                filing_date = cur_case_soup.find(string=re.compile("Date Filed")).parent.parent.find('b').get_text()
+                                case.filing_date = pytz.timezone('US/Central').localize(datetime.strptime(filing_date, "%m/%d/%Y"))
+                            else:
+                                print(case.case_num + ': has no filing date')
+                            case.save()
+                            # with open('/Users/efstone/Downloads/eviction_cases/' + link.text + '.html', 'w') as f:
+                            #     f.write(driver.page_source)
+                # check for too many records
+                if soup.find(string=re.compile("Record Count:")).parent.parent.parent.find_all('b')[1].get_text() == '400':
+                    print(start_date.strftime("%m/%d/%Y") + ' returned too many records')
+        start_date_text.value = (start_date + timedelta(days=3)).strftime("%m/%d/%Y")
         start_date_text.save()
     driver.quit()
 
@@ -124,7 +128,7 @@ def parse_case(**kwargs):
                     except Exception as e:
                         print(f"error saving appearance/attorney for case: {case.case_num}; appearance: {party.name} as {ptype}\n{e}")
                     # attorney finder
-            if cnum % 100 == 0:
-                print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
+            # if cnum % 100 == 0:
+            print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
 
