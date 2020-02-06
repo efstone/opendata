@@ -137,7 +137,10 @@ def parse_case(**kwargs):
                                     attorney.save()
                         except Exception as e:
                             print(f"error saving appearance/attorney for case: {case.case_num}; appearance: {party.name} as {ptype}\n{e}")
-            # if cnum % 100 == 0:
-            print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
+            if CaseConfig.objects.get(key='limit_parse_output').value == 'True':
+                if cnum % 100 == 0:
+                    print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
+            else:
+                print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
 
