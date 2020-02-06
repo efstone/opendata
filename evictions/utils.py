@@ -90,8 +90,8 @@ def docket_eater(num_runs):
 
 
 @app.task
-def parse_case(run_queries: False):
-    # for case in Case.objects.filter(court=''):
+def parse_case(**kwargs):
+    run_queries = kwargs.get('run_queries', False)
     if run_queries is True:
         with connection.cursor() as cursor:
             # extract case type
@@ -127,3 +127,6 @@ def parse_case(run_queries: False):
                     appearance = None
             if i % 100:
                 print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
+
+
+    parse_case()
