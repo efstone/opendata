@@ -110,24 +110,33 @@ def parse_case(**kwargs):
         for cnum, case in enumerate(Case.objects.filter(parse_time=None)[:10000]):
             soup = BeautifulSoup(case.page_source, 'html.parser')
             # disposition extractor was here -- please redo it in SQL
-            for idx, row in enumerate(soup.find_all(id=re.compile("PIr"))):
-                if idx == 0:
-                    ptype = row.get_text()
-                if idx % 2 == 0:
-                    ptype = row.get_text()
-                else:
-                    party = Party.objects.get_or_create(name=row.get_text())[0]
-                    appearance = Appearance(case=case, party=party, party_type=ptype)
-                    try:
-                        appearance.save()
-                        if row.parent.find('i') is not None:
-                            if row.parent.find('i').get_text() == 'Retained':
-                                attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
-                                appearance.attorney_set.add(attorney)
-                                attorney.save()
-                    except Exception as e:
-                        print(f"error saving appearance/attorney for case: {case.case_num}; appearance: {party.name} as {ptype}\n{e}")
-                    # attorney finder
+
+            # charge extractor
+            try:
+                charge = soup.find('th', text=re.compile('Charges: ')).parent.next_sibling.find_all('td')[1].get_text()
+                case.first_charge = charge
+                case.save()
+            except:
+                pass
+            # party + attorney extractor
+            if case.party_set.count() == 0:
+                for idx, row in enumerate(soup.find_all(id=re.compile("PIr"))):
+                    if idx == 0:
+                        ptype = row.get_text()
+                    if idx % 2 == 0:
+                        ptype = row.get_text()
+                    else:
+                        party = Party.objects.get_or_create(name=row.get_text())[0]
+                        appearance = Appearance(case=case, party=party, party_type=ptype)
+                        try:
+                            appearance.save()
+                            if row.parent.find('i') is not None:
+                                if row.parent.find('i').get_text() == 'Retained':
+                                    attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
+                                    appearance.attorney_set.add(attorney)
+                                    attorney.save()
+                        except Exception as e:
+                            print(f"error saving appearance/attorney for case: {case.case_num}; appearance: {party.name} as {ptype}\n{e}")
             # if cnum % 100 == 0:
             print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
