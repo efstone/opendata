@@ -27,6 +27,7 @@ class Case(models.Model):
     landlord_tenant_case = models.NullBooleanField(default=None)
     is_apartment = models.NullBooleanField(default=None)
     address = models.CharField(max_length=400, default='')
+    parse_time = models.DateTimeField(default=None, null=True, blank=True)
 
     def __str__(self):
         return self.case_num
