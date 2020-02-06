@@ -66,8 +66,7 @@ class Appearance(models.Model):
 
 
 class Attorney(models.Model):
-    parties = models.ManyToManyField(Party)
-    cases = models.ManyToManyField(Case)
+    appearance = models.ManyToManyField(Appearance)
     name = models.CharField(max_length=600)
 
     def __str__(self):

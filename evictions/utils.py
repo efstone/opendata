@@ -11,6 +11,7 @@ from django.db import connection
 import json
 import platform
 from docketdata.celery import app
+from django.db.models import Count
 
 if platform.system() == 'Darwin':
     chrome_path = "/Applications/Google Chrome.app/Contents/macOS/Google Chrome"
