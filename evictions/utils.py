@@ -116,14 +116,14 @@ def parse_case(**kwargs):
                     appearance = Appearance(case=case, party=party, party_type=ptype)
                     try:
                         appearance.save()
+                        if row.parent.find('i') is not None:
+                            if row.parent.find('i').get_text() == 'Retained':
+                                attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
+                                appearance.attorney_set.add(attorney)
+                                attorney.save()
                     except Exception as e:
-                        print(f"error saving appearance for case: {case.case_num}; appearance: {party.name} as {ptype}\n{e}")
+                        print(f"error saving appearance/attorney for case: {case.case_num}; appearance: {party.name} as {ptype}\n{e}")
                     # attorney finder
-                    if row.parent.find('i') is not None:
-                        if row.parent.find('i').get_text() == 'Retained':
-                            attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
-                            appearance.attorney_set.add(attorney)
-                            attorney.save()
             if cnum % 100 == 0:
                 print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
