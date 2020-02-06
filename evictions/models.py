@@ -63,6 +63,7 @@ class Appearance(models.Model):
 
     class Meta:
         db_table = 'denton_docket_appearance'
+        unique_together = ['case', 'party', 'party_type']
 
 
 class Attorney(models.Model):
