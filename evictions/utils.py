@@ -124,7 +124,7 @@ def parse_case(**kwargs):
                             attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
                             appearance.attorney_set.add(attorney)
                             attorney.save()
-            if i % 100:
+            if i % 100 == 0:
                 print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
 
