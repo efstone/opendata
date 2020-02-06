@@ -53,7 +53,7 @@ def docket_eater(num_runs):
                 Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text(f"{court_choice}")
                 # Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text("Justice of the Peace Pct #4")
                 # for civil records
-                driver.find_element_by_link_text(f"{CaseConfig.objects.get(key='case_type').value}").click()
+                driver.find_element_by_link_text(f"{case_type}").click()
                 # for criminal records
                 # driver.find_element_by_link_text("JP & County Court: Criminal Case Records").click()
                 driver.find_element_by_id("DateFiled").click()
