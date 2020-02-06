@@ -122,9 +122,8 @@ def parse_case(**kwargs):
                     if row.parent.find('i') is not None:
                         if row.parent.find('i').get_text() == 'Retained':
                             attorney = Attorney.objects.get_or_create(name=row.parent.find('i').parent.find('b').get_text())[0]
-                            attorney.appearance = appearance
+                            appearance.attorney_set.add(attorney)
                             attorney.save()
-                    appearance = None
             if i % 100:
                 print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
