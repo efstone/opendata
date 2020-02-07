@@ -45,7 +45,7 @@ def docket_eater(num_runs):
     #     case_list.append(os.path.split(filename)[1][:-5])
     for court_choice in court_choice_list:
         for case_type in case_type_list:
-            for i in range(1, num_runs):
+            for i in range(num_runs):
                 # Create a new instance of the Firefox driver (also opens FireFox)
                 if start_date > timezone.now():
                     break
@@ -107,6 +107,7 @@ def parse_case(**kwargs):
     total_cases = Case.objects.filter(parse_time=None).count()
     iterations = int(round(total_cases / 10000)) + 1
     for i in range(iterations):
+        print(f"iteration {i} of {iterations}")
         for cnum, case in enumerate(Case.objects.filter(parse_time=None)[:10000]):
             soup = BeautifulSoup(case.page_source, 'html.parser')
             # disposition extractor was here -- please redo it in SQL
@@ -115,9 +116,11 @@ def parse_case(**kwargs):
             try:
                 charge = soup.find('th', text=re.compile('Charges: ')).parent.next_sibling.find_all('td')[1].get_text()
                 case.first_charge = charge
-                case.save()
             except:
                 pass
+            finally:
+                case.parse_time = timezone.now()
+                case.save()
             # party + attorney extractor
             if case.party_set.count() == 0:
                 for idx, row in enumerate(soup.find_all(id=re.compile("PIr"))):
@@ -139,8 +142,8 @@ def parse_case(**kwargs):
                             print(f"error saving appearance/attorney for case: {case.case_num}; appearance: {party.name} as {ptype}\n{e}")
             if CaseConfig.objects.get(key='limit_parse_output').value == 'True':
                 if cnum % 100 == 0:
-                    print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
+                    print(f"{i}/{cnum}: {case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
             else:
-                print(f"{case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
+                print(f"{i}/{cnum}: {case.case_num} - {case.case_type} - {case.court} - {case.parties()}")
 
 
