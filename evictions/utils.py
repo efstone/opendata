@@ -62,7 +62,7 @@ def docket_eater(num_runs):
                 driver.find_element_by_id("DateFiledOnAfter").send_keys((cycle_date + timedelta(days=1)).strftime("%m/%d/%Y"))
                 driver.find_element_by_id("DateFiledOnBefore").clear()
                 driver.find_element_by_id("DateFiledOnBefore").send_keys((cycle_date + timedelta(days=3)).strftime("%m/%d/%Y"))
-                print(f'checking range {(start_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(cycle_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
+                print(f'checking range {(cycle_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(cycle_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
                 driver.find_element_by_id("SearchSubmit").click()
                 # grabbing eviction links with bs4
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
