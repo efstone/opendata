@@ -45,9 +45,10 @@ def docket_eater(num_runs):
     #     case_list.append(os.path.split(filename)[1][:-5])
     for court_choice in court_choice_list:
         for case_type in case_type_list:
+            cycle_date = start_date
             for i in range(num_runs):
                 # Create a new instance of the Firefox driver (also opens FireFox)
-                if start_date > timezone.now():
+                if cycle_date > timezone.now():
                     break
                 driver.get("http://justice1.dentoncounty.com/PublicAccess/default.aspx")
                 Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text(f"{court_choice}")
@@ -58,10 +59,10 @@ def docket_eater(num_runs):
                 # driver.find_element_by_link_text("JP & County Court: Criminal Case Records").click()
                 driver.find_element_by_id("DateFiled").click()
                 driver.find_element_by_id("DateFiledOnAfter").clear()
-                driver.find_element_by_id("DateFiledOnAfter").send_keys((start_date + timedelta(days=1)).strftime("%m/%d/%Y"))
+                driver.find_element_by_id("DateFiledOnAfter").send_keys((cycle_date + timedelta(days=1)).strftime("%m/%d/%Y"))
                 driver.find_element_by_id("DateFiledOnBefore").clear()
-                driver.find_element_by_id("DateFiledOnBefore").send_keys((start_date + timedelta(days=3)).strftime("%m/%d/%Y"))
-                print(f'checking range {(start_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(start_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
+                driver.find_element_by_id("DateFiledOnBefore").send_keys((cycle_date + timedelta(days=3)).strftime("%m/%d/%Y"))
+                print(f'checking range {(start_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(cycle_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
                 driver.find_element_by_id("SearchSubmit").click()
                 # grabbing eviction links with bs4
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -87,9 +88,10 @@ def docket_eater(num_runs):
                             #     f.write(driver.page_source)
                 # check for too many records
                 if soup.find(string=re.compile("Record Count:")).parent.parent.parent.find_all('b')[1].get_text() == '400':
-                    print(start_date.strftime("%m/%d/%Y") + ' returned too many records')
-        start_date_text.value = (start_date + timedelta(days=3)).strftime("%m/%d/%Y")
-        start_date_text.save()
+                    print(cycle_date.strftime("%m/%d/%Y") + ' returned too many records')
+            cycle_date = (cycle_date + timedelta(days=3)).strftime("%m/%d/%Y")
+    start_date_text.value = cycle_date
+    start_date_text.save()
     driver.quit()
 
 
