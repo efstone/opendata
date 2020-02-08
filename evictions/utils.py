@@ -106,11 +106,12 @@ def parse_case(**kwargs):
             cursor.execute("UPDATE denton_docket_case SET court = (regexp_match(page_source, '(?:Location:.*?<b>)(.*?)<\/b>'))[1] WHERE court = '' AND page_source ~ 'Location:.*?<b>.*?<\/b>';")
             # extract judge
             cursor.execute("UPDATE denton_docket_case SET judge = (regexp_match(page_source, '(?:Judicial Officer:.*?<b>)(.*?)<\/b>'))[1] WHERE judge = '' AND page_source ~ 'Judicial Officer:.*?<b>.*?<\/b>';")
-    total_cases = Case.objects.filter(parse_time=None).count()
+    unparsed_cases = Case.objects.filter(parse_time=None)
+    total_cases = unparsed_cases.count()
     iterations = int(round(total_cases / 10000)) + 1
     for i in range(iterations):
         print(f"iteration {i} of {iterations}")
-        for cnum, case in enumerate(Case.objects.filter(parse_time=None)[:10000]):
+        for cnum, case in enumerate(unparsed_cases[:10000]):
             soup = BeautifulSoup(case.page_source, 'html.parser')
             # disposition extractor was here -- please redo it in SQL
 
