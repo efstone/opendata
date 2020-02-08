@@ -89,8 +89,8 @@ def docket_eater(num_runs):
                 # check for too many records
                 if soup.find(string=re.compile("Record Count:")).parent.parent.parent.find_all('b')[1].get_text() == '400':
                     print(cycle_date.strftime("%m/%d/%Y") + ' returned too many records')
-                cycle_date = (cycle_date + timedelta(days=3)).strftime("%m/%d/%Y")
-    start_date_text.value = cycle_date
+                cycle_date = (cycle_date + timedelta(days=3))
+    start_date_text.value = cycle_date.strftime("%m/%d/%Y")
     start_date_text.save()
     driver.quit()
 
