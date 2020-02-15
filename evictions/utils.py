@@ -40,6 +40,7 @@ def docket_eater(num_runs):
     start_date_text = CaseConfig.objects.get(key='start_date')
     start_date_as_date = datetime.strptime(start_date_text.value, "%m/%d/%Y")
     start_date = pytz.timezone('US/Central').localize(start_date_as_date)
+    start_url = CaseConfig.objects.get(key='start_url').value
     # loop now inside function -- count is passed to function
     # case_list = []
     # for filename in glob.glob('/Users/efstone/Downloads/eviction_cases/*-*.html'):
@@ -51,7 +52,7 @@ def docket_eater(num_runs):
                 # Create a new instance of the Firefox driver (also opens FireFox)
                 if cycle_date > timezone.now():
                     break
-                driver.get("http://justice1.dentoncounty.com/PublicAccess/default.aspx")
+                driver.get(f"{start_url}default.aspx")
                 Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text(f"{court_choice}")
                 # Select(driver.find_element_by_id("sbxControlID2")).select_by_visible_text("Justice of the Peace Pct #4")
                 # for civil records
@@ -73,7 +74,7 @@ def docket_eater(num_runs):
                     if len(link.text) > 0 and re.match(case_num_pat, link.text) is not None:
                         if Case.objects.filter(case_num=link.text).count() == 0:
                             print(f"downloading case {link.text}")
-                            driver.get("http://justice1.dentoncounty.com/PublicAccess/" + link.get('href'))
+                            driver.get(f"{start_url}{link.get('href')}")
                             case = Case()
                             case.page_source = driver.page_source
                             case.case_num = link.text
