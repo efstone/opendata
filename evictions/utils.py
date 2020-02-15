@@ -36,6 +36,7 @@ def docket_eater(num_runs):
     case_num_pat = re.compile("[A-Z0-9]{1,4}-.*")
     court_choice_list = json.loads(CaseConfig.objects.get(key='court_choice_list').value)
     case_type_list = json.loads(CaseConfig.objects.get(key='case_type_list').value)
+    search_range = int(CaseConfig.objects.get(key='search_range').value)
     start_date_text = CaseConfig.objects.get(key='start_date')
     start_date_as_date = datetime.strptime(start_date_text.value, "%m/%d/%Y")
     start_date = pytz.timezone('US/Central').localize(start_date_as_date)
@@ -61,8 +62,8 @@ def docket_eater(num_runs):
                 driver.find_element_by_id("DateFiledOnAfter").clear()
                 driver.find_element_by_id("DateFiledOnAfter").send_keys((cycle_date + timedelta(days=1)).strftime("%m/%d/%Y"))
                 driver.find_element_by_id("DateFiledOnBefore").clear()
-                driver.find_element_by_id("DateFiledOnBefore").send_keys((cycle_date + timedelta(days=3)).strftime("%m/%d/%Y"))
-                print(f'checking range {(cycle_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(cycle_date + timedelta(days=3)).strftime("%m/%d/%Y")}')
+                driver.find_element_by_id("DateFiledOnBefore").send_keys((cycle_date + timedelta(days=search_range)).strftime("%m/%d/%Y"))
+                print(f'checking range {(cycle_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(cycle_date + timedelta(days=search_range)).strftime("%m/%d/%Y")}')
                 driver.find_element_by_id("SearchSubmit").click()
                 # grabbing eviction links with bs4
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -89,7 +90,7 @@ def docket_eater(num_runs):
                 # check for too many records
                 if soup.find(string=re.compile("Record Count:")).parent.parent.parent.find_all('b')[1].get_text() == '400':
                     print(cycle_date.strftime("%m/%d/%Y") + ' returned too many records')
-                cycle_date = (cycle_date + timedelta(days=3))
+                cycle_date = (cycle_date + timedelta(days=search_range))
     start_date_text.value = cycle_date.strftime("%m/%d/%Y")
     start_date_text.save()
     driver.quit()
