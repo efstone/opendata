@@ -59,7 +59,7 @@ def get_latest_log():
                 mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, DECRYPT_KEY))
                 mc_ftp.prot_p()
                 mc_log = []
-                mc_ftp.retrlines('RETR /custom-minecraft/logs/latest.log', mc_log.append)
+                mc_ftp.retrlines('RETR /minecraft/logs/latest.log', mc_log.append)
                 return mc_log
             except Exception as login_error:
                 print(f"Login/download failed with error: {login_error}")
