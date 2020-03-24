@@ -18,12 +18,11 @@ def receive_message(request):
                 cmd_response = login_and_send(f"say {request.POST['Body']}")
             else:
                 cmd_response = login_and_send(request.POST['Body'])
-            resp = MessagingResponse()
-            resp.message(f"{cmd_response}")
-            return HttpResponse(f"{resp}")
+            akliz_response = MessagingResponse()
+            akliz_response.message(f"{cmd_response}")
         else:
-            resp = MessagingResponse()
-            resp.message("This number cannot receive messages at this time.")
-            return HttpResponse(f"{resp}")
+            akliz_response = MessagingResponse()
+            akliz_response.message("This number cannot receive messages at this time.")
+        return render(request, "twilio.xml", {'akliz_response': akliz_response})
     except Exception as e:
-        return render(request, "base.html", {'error': e})
+        return render(request, "twilio.xml", {'error': e})
