@@ -23,6 +23,7 @@ def receive_message(request):
         else:
             akliz_response = MessagingResponse()
             akliz_response.message("This number cannot receive messages at this time.")
-        return render(request, "twilio.xml", {'akliz_response': akliz_response})
+        # return render(request, "twilio.xml", {'akliz_response': akliz_response})
+        return HttpResponse(f"{akliz_response}")
     except Exception as e:
         return render(request, "twilio.xml", {'error': e})
