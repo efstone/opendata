@@ -103,11 +103,15 @@ def parse_case(**kwargs):
     if run_queries is True:
         with connection.cursor() as cursor:
             # extract case type
+            print("Parsing case type...")
             cursor.execute("UPDATE denton_docket_case SET case_type = (regexp_match(page_source, '(?:Case Type:.*?<b>)(.*?)<\/b>'))[1] WHERE case_type = '' AND page_source ~ 'Case Type:.*?<b>.*?<\/b>';")
             # extract court
+            print("Parsing court...")
             cursor.execute("UPDATE denton_docket_case SET court = (regexp_match(page_source, '(?:Location:.*?<b>)(.*?)<\/b>'))[1] WHERE court = '' AND page_source ~ 'Location:.*?<b>.*?<\/b>';")
             # extract judge
+            print("Parsing judge...")
             cursor.execute("UPDATE denton_docket_case SET judge = (regexp_match(page_source, '(?:Judicial Officer:.*?<b>)(.*?)<\/b>'))[1] WHERE judge = '' AND page_source ~ 'Judicial Officer:.*?<b>.*?<\/b>';")
+            print("Update queries completed.")
     unparsed_cases = Case.objects.filter(parse_time=None)
     total_cases = unparsed_cases.count()
     iterations = int(round(total_cases / 10000)) + 1
