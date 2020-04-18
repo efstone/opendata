@@ -17,7 +17,7 @@ def receive_message(request):
             if re.match(cmds_pat, request.POST['Body']) is None:
                 cmd_response = login_and_send(f"say {request.POST['Body']}")
             else:
-                cmd_response = login_and_send(request.POST['Body'])
+                cmd_response = login_and_send(request.POST['Body'].strip())
             akliz_response = MessagingResponse()
             akliz_response.message(f"{cmd_response}")
         else:

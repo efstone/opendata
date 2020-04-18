@@ -192,6 +192,7 @@ def process_mc_log_files(log_dir):
     date_pat = re.compile('\d{4}-\d{2}-\d{2}')
     msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
+    teleport_pat = re.compile('jarvis[, ]+(teleport|tp) (\w+) to (\d+)+ (\d+)+ (\d+)+', re.IGNORECASE)
     utc_tz = pytz.timezone('UTC')
     for log_file in log_files:
         log_date_str_search = re.match(date_pat, os.path.basename(log_file))
@@ -215,6 +216,12 @@ def process_mc_log_files(log_dir):
                 print(f"{e} on line: {line}")
                 continue
             msg_time = datetime.combine(datetime.strptime(log_date_str, "%Y-%m-%d").date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
+            teleport_search = re.search(teleport_pat, line)
+            if teleport_search is not None:
+                try:
+                    login_and_send(f'teleport {teleport_search.group(2)} {teleport_search.group(3)} {teleport_search.group(4)} {teleport_search.group(5)}')
+                except Exception as E:
+                    print(E)
             if re.match(msgs_to_omit_pat, msg_content) is None:
                 new_msg = Log()
                 new_msg.msg_time = utc_tz.localize(msg_time)
