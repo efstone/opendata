@@ -56,10 +56,13 @@ def get_latest_log():
     try:
         with MyFTP_TLS(ftp_host, timeout=30) as mc_ftp:
             try:
+                retrieve_start = timezone.now()
                 mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, DECRYPT_KEY))
                 mc_ftp.prot_p()
                 mc_log = []
                 mc_ftp.retrlines('RETR /minecraft/logs/latest.log', mc_log.append)
+                retrieve_end = timezone.now()
+                print(f"ftp_retrieval_time: {retrieve_end - retrieve_start}")
                 return mc_log
             except Exception as login_error:
                 print(f"Login/download failed with error: {login_error}")
@@ -120,6 +123,7 @@ def check_for_players():
     players_without_logout_timestamps = []
     all_players = Player.objects.all()
     player_pat = re.compile('[^ ]+')
+    player_dialog_pat = re.compile('^(?:<)([^>]+)')
 
     # collect list of players in local db who appear to be logged in based on login/logout timestamps
     for player in all_players.exclude(last_logout=None):
@@ -145,11 +149,12 @@ def check_for_players():
                 to=f'+{ADMIN_PHONE}'
             )
 
-    # if someone is logged in, process the log to  check for chats, logins and logouts--if any are found,
+    # if someone is logged in, process the log to check for chats, logins and logouts--if any are found,
     # send them to sysop in chronological order
     if result != 'There are 0 of a max 20 players online: ':
         process_current_log()
         msg_list = []
+        teleport_pat = re.compile('jarvis[, ]+(teleport|tp) (\w+) to (\d+)+ (\d+)+ (\d+)+', re.IGNORECASE)
         # process logins first and update the player model
         unsent_logins = Log.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
         for msg in unsent_logins:
@@ -175,6 +180,15 @@ def check_for_players():
             msg.msg_twilled = timezone.now()
             msg.save()
 
+            teleport_search = re.search(teleport_pat, msg)
+            if teleport_search is not None:
+                try:
+                    if teleport_search.group(2) == 'me':
+                        character = re.match(player_dialog_pat, msg).group(1)
+                    login_and_send(f'teleport {character} {teleport_search.group(3)} {teleport_search.group(4)} {teleport_search.group(5)}')
+                except Exception as E:
+                    print(E)
+
         if len(msg_list) > 0:
             messages_to_send = Log.objects.filter(id__in=msg_list)
             messages = '\n'.join([msg_to_send.msg_content for msg_to_send in messages_to_send])
@@ -192,7 +206,6 @@ def process_mc_log_files(log_dir):
     date_pat = re.compile('\d{4}-\d{2}-\d{2}')
     msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
-    teleport_pat = re.compile('jarvis[, ]+(teleport|tp) (\w+) to (\d+)+ (\d+)+ (\d+)+', re.IGNORECASE)
     utc_tz = pytz.timezone('UTC')
     for log_file in log_files:
         log_date_str_search = re.match(date_pat, os.path.basename(log_file))
@@ -216,12 +229,6 @@ def process_mc_log_files(log_dir):
                 print(f"{e} on line: {line}")
                 continue
             msg_time = datetime.combine(datetime.strptime(log_date_str, "%Y-%m-%d").date(), datetime.strptime(msg_time_text, "%H:%M:%S").time())
-            teleport_search = re.search(teleport_pat, line)
-            if teleport_search is not None:
-                try:
-                    login_and_send(f'teleport {teleport_search.group(2)} {teleport_search.group(3)} {teleport_search.group(4)} {teleport_search.group(5)}')
-                except Exception as E:
-                    print(E)
             if re.match(msgs_to_omit_pat, msg_content) is None:
                 new_msg = Log()
                 new_msg.msg_time = utc_tz.localize(msg_time)
