@@ -180,11 +180,11 @@ def check_for_players():
             msg.msg_twilled = timezone.now()
             msg.save()
 
-            teleport_search = re.search(teleport_pat, msg)
+            teleport_search = re.search(teleport_pat, msg.msg_content)
             if teleport_search is not None:
                 try:
                     if teleport_search.group(2) == 'me':
-                        character = re.match(player_dialog_pat, msg).group(1)
+                        character = re.match(player_dialog_pat, msg.msg_content).group(1)
                     login_and_send(f'teleport {character} {teleport_search.group(3)} {teleport_search.group(4)} {teleport_search.group(5)}')
                 except Exception as E:
                     print(E)
