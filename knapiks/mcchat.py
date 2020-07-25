@@ -1,6 +1,6 @@
 import base64
 import ftplib
-from Crypto.Util import strxor
+from Crypto.Cipher import AES
 from django.conf import settings
 from knapiks.models import *
 import knapiks.mcrcon as mcrcon
@@ -17,7 +17,7 @@ import os
 TWILIO_CLIENT = Client(settings.TWILIO_ACCT_SID, settings.TWILIO_AUTH_TOKEN)
 ADMIN_PHONE = Config.objects.get(mc_key='admin_phone').mc_value
 TWILIO_PHONE = Config.objects.get(mc_key='twilio_phone').mc_value
-DECRYPT_KEY = settings.DECRYPT_KEY
+CRYPT_KEY = settings.CRYPT_KEY
 RCON_HOST = Config.objects.get(mc_key='rcon_host').mc_value
 RCON_PORT = Config.objects.get(mc_key='rcon_port').mc_value
 RCON_PW_CRYPT = Config.objects.get(mc_key='rcon_password').mc_value
@@ -39,14 +39,30 @@ class MyFTP_TLS(ftplib.FTP_TLS):
         return conn, size
 
 
-def mc_encrypt(plaintext, cipher_key):
-    cipher = strxor.new(cipher_key)
-    return base64.b64encode(cipher.encrypt(plaintext)).decode()
+# def mc_encrypt(plaintext):
+#     cipher = AES.new(DECRYPT_KEY, AES.MODE_EAX)
+#     return base64.b64encode(cipher.encrypt(plaintext)).decode()
 
 
-def mc_decrypt(ciphertext, cipher_key):
-    cipher = strxor.new(cipher_key)
-    return cipher.decrypt(base64.b64decode(ciphertext)).decode()
+def mc_encrypt(text, sec_key):
+    pad = 16 - len(text) % 16
+    text = text + chr(8) * pad
+    encryptor = AES.new(sec_key.encode('utf-8'), AES.MODE_CBC, b'0102030405060708')
+    cipher_text = encryptor.encrypt(text.encode('utf-8'))
+    cipher_text = base64.b64encode(cipher_text).decode('utf-8')
+    return cipher_text
+
+
+def mc_decrypt(text, sec_key):
+    encryptor = AES.new(sec_key.encode('utf-8'), AES.MODE_CBC, b'0102030405060708')
+    cipher_text = base64.b64decode(text.encode('utf-8'))
+    cipher_text = encryptor.decrypt(cipher_text).strip(b'\x08').decode('utf-8')
+    return cipher_text
+
+
+# def mc_decrypt(ciphertext, cipher_key):
+#     cipher = strxor.new(cipher_key)
+#     return cipher.decrypt(base64.b64decode(ciphertext)).decode()
 
 
 def get_latest_log():
@@ -57,7 +73,7 @@ def get_latest_log():
         with MyFTP_TLS(ftp_host, timeout=30) as mc_ftp:
             try:
                 retrieve_start = timezone.now()
-                mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, DECRYPT_KEY))
+                mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, CRYPT_KEY))
                 mc_ftp.prot_p()
                 mc_log = []
                 mc_ftp.retrlines('RETR /minecraft/logs/latest.log', mc_log.append)
@@ -72,7 +88,7 @@ def get_latest_log():
 
 def login_and_send(command):
     try:
-        mc = mcrcon.login(RCON_HOST, int(RCON_PORT), mc_decrypt(RCON_PW_CRYPT, DECRYPT_KEY))
+        mc = mcrcon.login(RCON_HOST, int(RCON_PORT), mc_decrypt(RCON_PW_CRYPT, CRYPT_KEY))
         cmd = mcrcon.command(mc, command)
         return cmd
     except Exception as e:
