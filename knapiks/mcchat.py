@@ -1,6 +1,6 @@
 import base64
 import ftplib
-from Crypto.Cipher import XOR
+from Crypto.Util import strxor
 from django.conf import settings
 from knapiks.models import *
 import knapiks.mcrcon as mcrcon
@@ -40,12 +40,12 @@ class MyFTP_TLS(ftplib.FTP_TLS):
 
 
 def mc_encrypt(plaintext, cipher_key):
-    cipher = XOR.new(cipher_key)
+    cipher = strxor.new(cipher_key)
     return base64.b64encode(cipher.encrypt(plaintext)).decode()
 
 
 def mc_decrypt(ciphertext, cipher_key):
-    cipher = XOR.new(cipher_key)
+    cipher = strxor.new(cipher_key)
     return cipher.decrypt(base64.b64decode(ciphertext)).decode()
 
 
