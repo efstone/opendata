@@ -5,6 +5,7 @@ from django.conf import settings
 from knapiks.models import *
 import knapiks.mcrcon as mcrcon
 import pytz
+import ssl
 from django.utils import timezone
 from datetime import datetime, timedelta
 import re
@@ -23,20 +24,20 @@ RCON_PORT = Config.objects.get(mc_key='rcon_port').mc_value
 RCON_PW_CRYPT = Config.objects.get(mc_key='rcon_password').mc_value
 
 
-class MyFTP_TLS(ftplib.FTP_TLS):
-    """Explicit FTPS, with shared TLS session"""
-
-    # special thanks to https://stackoverflow.com/users/448474/hynekcer for this class
-    # this was the easy fix for the "session reuse required" error that was happening
-    # with Python's native FTP_TLS class
-
-    def ntransfercmd(self, cmd, rest=None):
-        conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
-        if self._prot_p:
-            conn = self.context.wrap_socket(conn,
-                                            server_hostname=self.host,
-                                            session=self.sock.session)
-        return conn, size
+# class MyFTP_TLS(ftplib.FTP_TLS):
+#     """Explicit FTPS, with shared TLS session"""
+#
+#     # special thanks to https://stackoverflow.com/users/448474/hynekcer for this class
+#     # this was the easy fix for the "session reuse required" error that was happening
+#     # with Python's native FTP_TLS class
+#
+#     def ntransfercmd(self, cmd, rest=None):
+#         conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
+#         if self._prot_p:
+#             conn = self.context.wrap_socket(conn,
+#                                             server_hostname=self.host,
+#                                             session=self.sock.session)
+#         return conn, size
 
 
 # def mc_encrypt(plaintext):
@@ -69,10 +70,13 @@ def get_latest_log():
     ftp_host = Config.objects.get(mc_key='ftp_host').mc_value
     ftp_login = Config.objects.get(mc_key='ftp_login').mc_value
     ftp_pw_crypt = Config.objects.get(mc_key='ftp_password').mc_value
+    ssl_context = ssl.create_default_context()
+    ssl_context.set_ciphers("DEFAULT@SECLEVEL=1")
     try:
-        with MyFTP_TLS(ftp_host, timeout=30) as mc_ftp:
+        with ftplib.FTP_TLS(ftp_host, timeout=30, context=ssl_context) as mc_ftp:
             try:
                 retrieve_start = timezone.now()
+                # mc_ftp.ssl_version = ssl.PROTOCOL_TLSv1
                 mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, CRYPT_KEY))
                 mc_ftp.prot_p()
                 mc_log = []

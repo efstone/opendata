@@ -4,7 +4,7 @@ from django.db import models
 
 class Disposition(models.Model):
     name = models.CharField(max_length=100)
-    judge_decided = models.NullBooleanField(default=None)
+    judge_decided = models.BooleanField(default=None, null=True)
 
     def __str__(self):
         return f"{self.name}"
@@ -24,8 +24,8 @@ class Case(models.Model):
     case_type = models.CharField(max_length=120, default='')
     judgment_amount = models.DecimalField(max_digits=20, decimal_places=2, default=None, null=True)
     awarded_to = models.CharField(max_length=500, default='', null=True)
-    landlord_tenant_case = models.NullBooleanField(default=None)
-    is_apartment = models.NullBooleanField(default=None)
+    landlord_tenant_case = models.BooleanField(default=None, null=True)
+    is_apartment = models.BooleanField(default=None, null=True)
     address = models.CharField(max_length=400, default='')
     parse_time = models.DateTimeField(default=None, null=True, blank=True)
     first_charge = models.CharField(max_length=300, default='', blank=True)
@@ -44,7 +44,7 @@ class Case(models.Model):
 class Party(models.Model):
     cases = models.ManyToManyField(Case, through='Appearance')
     name = models.CharField(max_length=600, unique=True)
-    is_landlord = models.NullBooleanField(default=None)
+    is_landlord = models.BooleanField(default=None, null=True)
 
     def __str__(self):
         return self.name
