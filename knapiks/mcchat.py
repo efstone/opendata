@@ -174,7 +174,7 @@ def check_for_players():
     if result != 'There are 0 of a max 20 players online: ':
         process_current_log()
         msg_list = []
-        teleport_pat = re.compile('jarvis[, ]+(teleport|tp) (\w+) to (\d+)+ (\d+)+ (\d+)+', re.IGNORECASE)
+        teleport_pat = re.compile('jarvis[, ]+(teleport|tp) (\w+) to (-?\d+)+ (-?\d+)+ (-?\d+)+', re.IGNORECASE)
         # process logins first and update the player model
         unsent_logins = Log.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
         for msg in unsent_logins:
