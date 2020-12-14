@@ -70,6 +70,7 @@ def get_latest_log():
     ftp_host = Config.objects.get(mc_key='ftp_host').mc_value
     ftp_login = Config.objects.get(mc_key='ftp_login').mc_value
     ftp_pw_crypt = Config.objects.get(mc_key='ftp_password').mc_value
+    minecraft_path = Config.objects.get(mc_key='minecraft_path').mc_value
     ssl_context = ssl.create_default_context()
     ssl_context.set_ciphers("DEFAULT@SECLEVEL=1")
     try:
@@ -80,7 +81,7 @@ def get_latest_log():
                 mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, CRYPT_KEY))
                 mc_ftp.prot_p()
                 mc_log = []
-                mc_ftp.retrlines('RETR /minecraft/logs/latest.log', mc_log.append)
+                mc_ftp.retrlines(f'RETR /{minecraft_path}/logs/latest.log', mc_log.append)
                 retrieve_end = timezone.now()
                 print(f"ftp_retrieval_time: {retrieve_end - retrieve_start}")
                 return mc_log
