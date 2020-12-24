@@ -176,6 +176,7 @@ def check_for_players():
         process_current_log()
         msg_list = []
         teleport_pat = re.compile('jarvis[, ]+(teleport|tp) (\w+) to (-?\d+)+ (-?\d+)+ (-?\d+)+', re.IGNORECASE)
+        zzzzzzz_pat = re.compile('[z]{3,50}', re.IGNORECASE)
         # process logins first and update the player model
         unsent_logins = Log.objects.filter(msg_content__contains='joined the game', msg_twilled=None)
         for msg in unsent_logins:
@@ -201,12 +202,23 @@ def check_for_players():
             msg.msg_twilled = timezone.now()
             msg.save()
 
+            # if someone says the magic jarvis teleport phrase, teleport them!
             teleport_search = re.search(teleport_pat, msg.msg_content)
             if teleport_search is not None:
                 try:
                     if teleport_search.group(2) == 'me':
                         character = re.match(player_dialog_pat, msg.msg_content).group(1)
                     login_and_send(f'teleport {character} {teleport_search.group(3)} {teleport_search.group(4)} {teleport_search.group(5)}')
+                except Exception as E:
+                    print(E)
+
+            # if someone types three or more "z" characters in a row, teleport them to an ice floe!
+            zzzzzzz_search = re.search(zzzzzzz_pat, msg.msg_content)
+            if zzzzzzz_search is not None:
+                try:
+                    character = re.match(player_dialog_pat, msg.msg_content).group(1)
+                    login_and_send(f'teleport {character} -129 64 481')
+                    login_and_send(f'please do not spam "zzz"')
                 except Exception as E:
                     print(E)
 
