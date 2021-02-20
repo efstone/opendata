@@ -126,7 +126,7 @@ def process_current_log():
         if re.match(msgs_to_omit_pat, msg_content) is None:
             new_msg = Log()
             new_msg.msg_time = utc_tz.localize(msg_time)
-            new_msg.msg_content = msg_content
+            new_msg.msg_content = msg_content[:2000]
             new_msg.msg_type = msg_type
             try:
                 new_msg.save()
