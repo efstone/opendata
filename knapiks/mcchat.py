@@ -94,13 +94,13 @@ def get_latest_log():
 def login_and_send(command):
     try:
         mc = mcrcon.login(RCON_HOST, int(RCON_PORT), mc_decrypt(RCON_PW_CRYPT, CRYPT_KEY))
+    except Exception as e:
+        return e
+    try:
         cmd = mcrcon.command(mc, command)
         return cmd
     except Exception as e:
-        try:
-            mc.close()
-        except Exception as e:
-            pass
+        mc.close()
         return e
 
 
