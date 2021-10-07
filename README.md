@@ -13,6 +13,7 @@ The "evictions" Django app within this project is a more developed version of a 
   * **Selenium** to serve as the webdriver for controlling Chromium
   * **Celery** to manage the tasks, which run over long periods of time
   * Linux VPS (that's what I mainly use it on)
+#### Putting it into action
 * using the Config model, specify parameters as needed, e.g. search_range (number of days for one search--3 seems optimal), court_choice_list, case_type_list and start_date
 * ensure Celery is running and that it loaded your tasks
 * launch the django shell
