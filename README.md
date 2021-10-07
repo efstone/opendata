@@ -11,6 +11,9 @@ The "evictions" Django app within this project is a more developed version of a 
   * **BeautifulSoup** to parse the web pages (and some postgres-specific SQL)
   * **Chromium** as the browser, because many sites fend off simple non-browser calls from Python libraries like requests
   * **Selenium** to serve as the webdriver for controlling Chromium
+    * also get geckdriver
+    * https://github.com/mozilla/geckodriver/releases
+    * I recommend putting it in the bin of your venv
   * **Celery** to manage the tasks, which run over long periods of time
   * Linux VPS (that's what I mainly use it on)
 #### Putting it into action
