@@ -18,5 +18,5 @@ def faculty_parse():
         phone = phone_search.getText()[7:] if phone_search else 'unlisted'
         print(f"{name} -- {email} -- {phone}")
         faculty_list.append([name, email, phone])
-    df = pd.DataFrame(faculty_list)
+    df = pd.DataFrame(faculty_list, columns=['name', 'email', 'phone'])
 

@@ -1,3 +1,5 @@
+from time import sleep
+
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from datetime import datetime, timedelta
@@ -66,6 +68,10 @@ def docket_eater(num_runs):
                 driver.find_element_by_id("DateFiledOnBefore").send_keys((cycle_date + timedelta(days=search_range)).strftime("%m/%d/%Y"))
                 print(f'checking range {(cycle_date + timedelta(days=1)).strftime("%m/%d/%Y")} - {(cycle_date + timedelta(days=search_range)).strftime("%m/%d/%Y")}')
                 driver.find_element_by_id("SearchSubmit").click()
+                # placeholder step only to be used for live demo running a partial loop
+                # sleep(1)
+                # placeholder step only to be used for live demo running a partial loop
+                # cycle_date = (cycle_date + timedelta(days=search_range))
                 # grabbing eviction links with bs4
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
                 print(f'found {len(soup.find_all("a", text=case_num_pat))} links')
