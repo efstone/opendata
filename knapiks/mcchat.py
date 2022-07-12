@@ -107,7 +107,7 @@ def login_and_send(command):
 @app.task
 def process_current_log():
     log = get_latest_log()
-    msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!)')
+    msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!|Thread RCON Client)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
     utc_tz = pytz.timezone('UTC')
     for line in log:
