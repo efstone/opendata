@@ -1,5 +1,8 @@
 import base64
 import ftplib
+from io import StringIO
+
+import pysftp as pysftp
 from Crypto.Cipher import AES
 from django.conf import settings
 from knapiks.models import *
@@ -23,26 +26,6 @@ RCON_HOST = Config.objects.get(mc_key='rcon_host').mc_value
 RCON_PORT = Config.objects.get(mc_key='rcon_port').mc_value
 RCON_PW_CRYPT = Config.objects.get(mc_key='rcon_password').mc_value
 
-
-class MyFTP_TLS(ftplib.FTP_TLS):
-    """Explicit FTPS, with shared TLS session"""
-
-    # special thanks to https://stackoverflow.com/users/448474/hynekcer for this class
-    # this was the easy fix for the "session reuse required" error that was happening
-    # with Python's native FTP_TLS class
-
-    def ntransfercmd(self, cmd, rest=None):
-        conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
-        if self._prot_p:
-            conn = self.context.wrap_socket(conn,
-                                            server_hostname=self.host,
-                                            session=self.sock.session)
-        return conn, size
-
-
-# def mc_encrypt(plaintext):
-#     cipher = AES.new(DECRYPT_KEY, AES.MODE_EAX)
-#     return base64.b64encode(cipher.encrypt(plaintext)).decode()
 
 
 def mc_encrypt(text, sec_key):
@@ -71,20 +54,16 @@ def get_latest_log():
     ftp_login = Config.objects.get(mc_key='ftp_login').mc_value
     ftp_pw_crypt = Config.objects.get(mc_key='ftp_password').mc_value
     minecraft_path = Config.objects.get(mc_key='minecraft_path').mc_value
-    ssl_context = ssl.create_default_context()
-    ssl_context.set_ciphers("DEFAULT@SECLEVEL=1")
+    cnopts = pysftp.CnOpts(knownhosts='/home/efstone/.ssh/known_hosts')
     try:
-        with MyFTP_TLS(ftp_host, timeout=30, context=ssl_context) as mc_ftp:
+        with pysftp.Connection(host=ftp_host, username=ftp_login, password=mc_decrypt(ftp_pw_crypt, CRYPT_KEY), cnopts=cnopts) as mc_ftp:
             try:
                 retrieve_start = timezone.now()
                 # mc_ftp.ssl_version = ssl.PROTOCOL_TLSv1
-                mc_ftp.login(ftp_login, mc_decrypt(ftp_pw_crypt, CRYPT_KEY))
-                mc_ftp.prot_p()
-                mc_log = []
-                mc_ftp.retrlines(f'RETR /{minecraft_path}/logs/latest.log', mc_log.append)
+                mc_ftp.get(f'/{minecraft_path}/logs/latest.log', '/home/efstone/logtemp.log')
                 retrieve_end = timezone.now()
                 print(f"ftp_retrieval_time: {retrieve_end - retrieve_start}")
-                return mc_log
+                return
             except Exception as login_error:
                 print(f"Login/download failed with error: {login_error}")
     except Exception as connection_error:
@@ -106,7 +85,8 @@ def login_and_send(command):
 
 @app.task
 def process_current_log():
-    log = get_latest_log()
+    with open('/home/efstone/logtemp.log', 'r') as f:
+        log = f.read().splitlines()
     msgs_to_omit_pat = re.compile('(Rcon connection from|Sav.{2,3} the game|Can\'t keep up!|Thread RCON Client)')
     mc_log_pat = re.compile('\[(\d\d:\d\d:\d\d)] \[(.+?)\]: (.*)')
     utc_tz = pytz.timezone('UTC')
@@ -273,3 +253,12 @@ def process_mc_log_files(log_dir):
                     continue
             else:
                 continue
+
+
+def new_ftp():
+    ftp_host = Config.objects.get(mc_key='ftp_host').mc_value
+    ftp_login = Config.objects.get(mc_key='ftp_login').mc_value
+    ftp_pw_crypt = Config.objects.get(mc_key='ftp_password').mc_value
+    cnopts = pysftp.CnOpts(knownhosts='/home/efstone/.ssh/known_hosts')
+    ftp = pysftp.Connection(host=ftp_host, username=ftp_login, password=mc_decrypt(ftp_pw_crypt, CRYPT_KEY), cnopts=cnopts)
+    ftp.listdir()
